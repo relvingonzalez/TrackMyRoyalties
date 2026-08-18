@@ -1,8 +1,9 @@
 /**
- * WideLedger — platforms, storage, demo catalog, aggregation
+ * TrackMyRoyalties — platforms, storage, demo catalog, aggregation
  */
 (function (global) {
-  const STORAGE_KEY = "wideledger.v1";
+  const STORAGE_KEY = `${global.Brand.slug}.v1`;
+  const LEGACY_STORAGE_KEY = "wideledger.v1"; // pre-rebrand key — read once, then migrated off
 
   const PLATFORMS = [
     { id: "kdp", name: "Amazon KDP", short: "KDP", color: "#FF9900", free: true },
@@ -57,7 +58,7 @@
     return d;
   }
 
-  const PRE_DEMO_KEY = "wideledger.preDemo.v1";
+  const PRE_DEMO_KEY = `${global.Brand.slug}.preDemo.v1`; // low-stakes transient snapshot, no migration needed
 
   function defaultState() {
     return {
@@ -185,7 +186,17 @@
 
   function loadState() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      let raw = localStorage.getItem(STORAGE_KEY);
+      // One-time migration from the pre-rebrand (WideLedger) storage key, so nobody's
+      // existing local data disappears just because the product got renamed.
+      if (!raw) {
+        const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+        if (legacy) {
+          localStorage.setItem(STORAGE_KEY, legacy);
+          localStorage.removeItem(LEGACY_STORAGE_KEY);
+          raw = legacy;
+        }
+      }
       if (!raw) return defaultState();
       return { ...defaultState(), ...JSON.parse(raw) };
     } catch {

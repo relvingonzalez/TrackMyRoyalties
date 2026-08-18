@@ -370,7 +370,7 @@
    * Safety net on top of the header-name checks: sample a handful of actual data cells for a
    * candidate column and reject it if most of them look like a percentage ("85%", "0.85%", etc).
    * Catches rate/percentage columns the name-based exclusions miss (unexpected header wording,
-   * a platform WideLedger hasn't seen yet) — a royalty-amount candidate should never win just
+   * a platform this app hasn't seen yet) — a royalty-amount candidate should never win just
    * because nothing in its header literally says "rate" or "percent".
    */
   function columnLooksLikePercent(rows, headerIdx, colIdx) {
@@ -903,7 +903,7 @@
   }
 
   /**
-   * Normalize any reasonable royalty CSV into WideLedger royalty rows
+   * Normalize any reasonable royalty CSV into this app's royalty rows
    */
   function importRoyaltyCSV(text, platformId) {
     // Normalize newlines; strip BOM
@@ -1321,7 +1321,7 @@
       urlVerified: true,
       body:
         "kdpreports.amazon.com → Orders (left menu) → Choose a date → Lifetime → download (.xlsx). " +
-        "That file has several sheets: Combined Sales, per-format Royalty sheets (eBook/Paperback/Hardcover/Audiobook), KENP, Orders Processed, Summary, etc. WideLedger detects this shape and combines the per-format Royalty + KENP sheets for you — you don't need to pick one or sum them yourself. " +
+        "That file has several sheets: Combined Sales, per-format Royalty sheets (eBook/Paperback/Hardcover/Audiobook), KENP, Orders Processed, Summary, etc. TrackMyRoyalties detects this shape and combines the per-format Royalty + KENP sheets for you — you don't need to pick one or sum them yourself. " +
         "Why KDP numbers often disagree: dashboard “estimated royalties” ≠ Orders export ≠ Prior Months’ Royalties (what actually gets paid) ≠ bank deposit. Free promos, refunds, marketplace currency, and KENP timing all differ. " +
         "For cash actually paid, use Reports → Prior Months' Royalties instead; for unit/order history, use Orders (Lifetime).",
     },
@@ -1358,7 +1358,7 @@
       url: "https://press.barnesandnoble.com/",
       urlVerified: true,
       body:
-        "press.barnesandnoble.com → Sales Reporting → pick a report type (Sales by Month, Sales by Year, Custom Date, etc.) → Export Excel Sheet at the top of the results page. Monthly reports look like: preamble “Sales by Month - 2024”, then columns Month / Units Sold / Total Royalty. WideLedger maps December → 2024-12-01 and skips $0 months. Set platform to B&N Press. Skip if B&N is only via Draft2Digital.",
+        "press.barnesandnoble.com → Sales Reporting → pick a report type (Sales by Month, Sales by Year, Custom Date, etc.) → Export Excel Sheet at the top of the results page. Monthly reports look like: preamble “Sales by Month - 2024”, then columns Month / Units Sold / Total Royalty. TrackMyRoyalties maps December → 2024-12-01 and skips $0 months. Set platform to B&N Press. Skip if B&N is only via Draft2Digital.",
     },
     {
       id: "google",
@@ -1379,8 +1379,8 @@
         "Ingram pays on roughly a 90-day delay, so a given period's compensation reflects sales from about 3 months earlier.",
     },
     {
-      id: "wideledger",
-      title: "WideLedger format (best)",
+      id: "trackmyroyalties",
+      title: "TrackMyRoyalties format (best)",
       body: "Columns: date, platform, title, royalty, units, kenp. Example: 2026-03-01,kdp,Ember Protocol,12.40,4,0",
     },
   ];

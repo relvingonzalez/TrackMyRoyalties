@@ -1,5 +1,5 @@
 /**
- * WideLedger Premium — signed license verification (ECDSA P-256).
+ * TrackMyRoyalties Premium — signed license verification (ECDSA P-256).
  *
  * Only licenses signed with tools/keys/private.pem will verify.
  * The private key is NOT shipped with the app.

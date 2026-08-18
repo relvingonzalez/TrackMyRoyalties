@@ -4,13 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f1419" />
-  <meta name="description" content="WideLedger — one dashboard for author income, expenses, and true profit across every publishing platform." />
+  <!-- Static literals below (description/title/app-title) are read by crawlers and link
+       previews before any JS runs, so they're kept as plain text on purpose rather than
+       templated — js/brand.js re-syncs them at runtime from the single Brand source of
+       truth. On a future rebrand: update js/brand.js first, then match these to it. -->
+  <meta name="description" content="TrackMyRoyalties — one dashboard for author income, expenses, and true profit across every publishing platform." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="WideLedger" />
+  <meta name="apple-mobile-web-app-title" content="TrackMyRoyalties" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23c9a227'/%3E%3Cpath d='M16 44V20h8.5c6 0 10 3.2 10 8.2 0 3.4-1.8 6-4.8 7.2L38 44h-7.2l-6.8-8.4H23V44H16zm7-14.2h1.6c2.6 0 4.2-1.3 4.2-3.5S27.2 23 24.6 23H23v6.8zM40 44l8-24h7.2l8 24h-7l-1.4-4.6H48.4L47 44H40zm9.4-10.2h5.2l-2.6-8.4-2.6 8.4z' fill='%230f1419'/%3E%3C/svg%3E" />
-  <title>WideLedger — Author Income &amp; Profit</title>
+  <title>TrackMyRoyalties — Author Income &amp; Profit</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
@@ -18,6 +22,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
   <!-- SheetJS: KDP/B&N Excel (.xlsx) reports -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+  <script src="js/brand.js" defer></script>
   <script src="js/data.js" defer></script>
   <script src="js/platform-icons.js" defer></script>
   <script src="js/license.js" defer></script>
@@ -31,8 +36,8 @@
     <section id="view-landing" class="view landing hidden">
       <header class="landing-nav">
         <div class="brand">
-          <span class="brand-mark">W</span>
-          <span class="brand-name">WideLedger</span>
+          <span class="brand-mark">T</span>
+          <span class="brand-name">TrackMyRoyalties</span>
         </div>
         <div class="landing-nav-actions">
           <button type="button" class="btn ghost" data-action="enter-app">Open app</button>
@@ -61,7 +66,7 @@
         <div class="cards-3">
           <article class="card">
             <h3>Subscription tax on success</h3>
-            <p>Competitors charge $10–$249/mo and often raise the tier as you earn more. WideLedger: free core + <strong>one-time $9.99</strong> for everything else.</p>
+            <p>Competitors charge $10–$249/mo and often raise the tier as you earn more. TrackMyRoyalties: free core + <strong>one-time $9.99</strong> for everything else.</p>
           </article>
           <article class="card">
             <h3>Income ≠ profit</h3>
@@ -96,8 +101,8 @@
     <section id="view-app" class="view app-shell hidden">
       <aside class="sidebar" id="sidebar">
         <div class="brand compact">
-          <span class="brand-mark">W</span>
-          <span class="brand-name">WideLedger</span>
+          <span class="brand-mark">T</span>
+          <span class="brand-name">TrackMyRoyalties</span>
         </div>
         <nav class="side-nav">
           <button type="button" class="nav-item active" data-nav="dashboard">Dashboard</button>
@@ -358,7 +363,7 @@
                 />
                 <div class="dropzone-inner">
                   <strong>Click or drop CSV or Excel (.xlsx)</strong>
-                  <span class="muted">KDP Orders Lifetime export, B&amp;N, Kobo, D2D… (Excel enabled). Drop several files at once and WideLedger will guess each one's platform.</span>
+                  <span class="muted">KDP Orders Lifetime export, B&amp;N, Kobo, D2D… (Excel enabled). Drop several files at once and TrackMyRoyalties will guess each one's platform.</span>
                 </div>
               </div>
               <label class="field">
@@ -373,7 +378,7 @@
                 <h3>Preview — compare to your store before importing</h3>
 
                 <div id="import-kdp-smart" class="kdp-smart-banner hidden">
-                  <p><strong>This looks like a KDP Orders (Lifetime) report.</strong> It has several sheets — one per format, plus rollups. WideLedger can combine the per-format Royalty + KENP sheets automatically (recommended), tagging each row's format from its sheet name since these sheets don't have a Format column.</p>
+                  <p><strong>This looks like a KDP Orders (Lifetime) report.</strong> It has several sheets — one per format, plus rollups. TrackMyRoyalties can combine the per-format Royalty + KENP sheets automatically (recommended), tagging each row's format from its sheet name since these sheets don't have a Format column.</p>
                   <div class="row gap wrap" style="margin:0.5rem 0">
                     <label class="field inline">
                       <input type="radio" name="import-mode" id="import-mode-smart" checked />
@@ -533,7 +538,7 @@
             <div>
               <p class="eyebrow gold">Author-friendly pricing</p>
               <h2>Unlock everything for <span class="price">$9.99</span> once</h2>
-              <p>Competitors charge $10–$29+/month and often tier by income. WideLedger stays free for core tracking; Premium is a one-time unlock via a <strong>cryptographically signed license</strong>.</p>
+              <p>Competitors charge $10–$29+/month and often tier by income. TrackMyRoyalties stays free for core tracking; Premium is a one-time unlock via a <strong>cryptographically signed license</strong>.</p>
               <ul class="check-list">
                 <li>Unlimited platforms (free: 2)</li>
                 <li>Full history &amp; custom ranges beyond 12 months</li>
@@ -566,7 +571,7 @@
             <div class="premium-compare">
               <h3>vs typical trackers</h3>
               <table class="data-table compact">
-                <thead><tr><th></th><th>Others</th><th>WideLedger</th></tr></thead>
+                <thead><tr><th></th><th>Others</th><th>TrackMyRoyalties</th></tr></thead>
                 <tbody>
                   <tr><td>Pricing</td><td>$10–249/mo</td><td><strong>$0 + $9.99 once</strong></td></tr>
                   <tr><td>Scales with income?</td><td>Often yes</td><td>Never</td></tr>
@@ -628,7 +633,7 @@
           </div>
           <section class="panel">
             <h2>About &amp; roadmap</h2>
-            <p><strong>WideLedger MVP</strong> — local-first author P&amp;L for wide publishing.</p>
+            <p><strong>TrackMyRoyalties MVP</strong> — local-first author P&amp;L for wide publishing.</p>
             <ul class="muted">
               <li><strong>Now:</strong> CSV import, multi-platform P&amp;L, expenses, freemium unlock, PWA install.</li>
               <li><strong>Next:</strong> Capacitor iOS/macOS wrapper for App Store, optional encrypted cloud sync, Amazon Ads CSV ROI matcher.</li>

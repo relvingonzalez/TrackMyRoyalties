@@ -1,6 +1,6 @@
 {
-  "name": "WideLedger — Author Income & Profit",
-  "short_name": "WideLedger",
+  "name": "TrackMyRoyalties — Author Income & Profit",
+  "short_name": "TrackMyRoyalties",
   "description": "Track royalties, expenses, and true profit across KDP, Kobo, D2D, Apple Books, IngramSpark, and more.",
   "start_url": "./index.html",
   "display": "standalone",

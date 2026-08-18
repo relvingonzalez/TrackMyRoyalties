@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-WideLedger desktop shell (macOS / Windows / Linux via pywebview).
+TrackMyRoyalties desktop shell (macOS / Windows / Linux via pywebview).
 
 - Serves the local web app (no internet required for app code)
-- Optional: auto-loads ~/.wideledger/license.key into the app after launch
-- Optional: WIDELEDGER_LICENSE env var with a full WL1.… key
+- Optional: auto-loads ~/.trackmyroyalties/license.key into the app after launch
+- Optional: TRACKMYROYALTIES_LICENSE env var with a full WL1.… key
 
 Run:
-  cd ~/WideLedger
+  cd ~/TrackMyRoyalties
   .venv/bin/python desktop/app.py
 """
 
@@ -23,11 +23,28 @@ from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+# Single source of truth for this process, same idea as js/brand.js on the web side — a
+# future rebrand only means changing these two lines and CONFIG_DIR's old-name fallback
+# below (no other language/runtime can share one literal constant with the browser JS
+# without a build step, so this is the Python-side mirror, not a duplicate to hunt down).
+APP_NAME = "TrackMyRoyalties"
+APP_SLUG = "trackmyroyalties"
+
 ROOT = Path(__file__).resolve().parent.parent
-LICENSE_PATH = Path.home() / ".wideledger" / "license.key"
-STORAGE_DIR = Path.home() / ".wideledger" / "webview_data"
+CONFIG_DIR = Path.home() / f".{APP_SLUG}"
+LICENSE_PATH = CONFIG_DIR / "license.key"
+STORAGE_DIR = CONFIG_DIR / "webview_data"
 HOST = "127.0.0.1"
 PORT = 8788
+
+# One-time migration from the pre-rebrand (WideLedger) config dir, so an existing license
+# file / persistent browser profile isn't silently orphaned by the rename.
+_LEGACY_CONFIG_DIR = Path.home() / ".wideledger"
+if _LEGACY_CONFIG_DIR.is_dir() and not CONFIG_DIR.exists():
+    import shutil
+
+    shutil.copytree(_LEGACY_CONFIG_DIR, CONFIG_DIR)
+    print(f"Migrated {_LEGACY_CONFIG_DIR} -> {CONFIG_DIR}")
 
 # Tied to the actual files on disk (their newest mtime), not "when did this process start" —
 # a process can start fresh and still be pointed at a stale/wrong folder, and a launch-time
@@ -55,7 +72,7 @@ def compute_build_stamp() -> str:
 
 
 BUILD_STAMP = compute_build_stamp()
-# Cache-busting query param appended to WideLedger's own local script/link URLs (never the
+# Cache-busting query param appended to this app's own local script/link URLs (never the
 # external CDN ones) — same value as the build stamp shown in the UI, so a fresh set of files
 # always gets fresh URLs the embedded browser has never cached before.
 CACHE_BUST = str(int(time.time()))
@@ -110,7 +127,7 @@ def start_server():
 
 
 def read_owner_license() -> str | None:
-    env = os.environ.get("WIDELEDGER_LICENSE", "").strip()
+    env = os.environ.get(f"{APP_SLUG.upper()}_LICENSE", "").strip()
     if env.startswith("WL1."):
         return env
     if LICENSE_PATH.is_file():
@@ -182,7 +199,7 @@ def main():
     license_key = read_owner_license()
 
     window = webview.create_window(
-        "WideLedger",
+        APP_NAME,
         url,
         width=1280,
         height=840,
@@ -227,11 +244,11 @@ def main():
     # pywebview 6: events
     window.events.loaded += on_loaded
 
-    print(f"WideLedger desktop → {url}")
+    print(f"{APP_NAME} desktop → {url}")
     if license_key:
         print(f"License source found (auto-unlock Premium).")
     else:
-        print("No license file. Free mode. Add ~/.wideledger/license.key or tools/owner.license")
+        print(f"No license file. Free mode. Add {LICENSE_PATH} or tools/owner.license")
 
     # BUG FIX: pywebview defaults to private_mode=True, which means the
     # WKWebView/Edge/GTK backend uses an ephemeral, in-memory data store —
@@ -242,7 +259,7 @@ def main():
     # disk, the same way a normal browser tab would behave.
     STORAGE_DIR.mkdir(parents=True, exist_ok=True)
     webview.start(
-        debug=os.environ.get("WIDELEDGER_DEBUG") == "1",
+        debug=os.environ.get(f"{APP_SLUG.upper()}_DEBUG") == "1",
         private_mode=False,
         storage_path=str(STORAGE_DIR),
     )

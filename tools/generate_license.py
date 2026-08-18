@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate WideLedger Premium license keys.
+Generate TrackMyRoyalties Premium license keys.
 
 Requires the private key at tools/keys/private.pem (NEVER ship this with the app).
 Only the public key is embedded in the client for verification.
@@ -52,7 +52,7 @@ def sign_payload(private_key, payload: dict) -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Mint a WideLedger Premium license")
+    parser = argparse.ArgumentParser(description="Mint a TrackMyRoyalties Premium license")
     parser.add_argument("--name", default="licensee", help="Label stored in the license (not verified as identity)")
     parser.add_argument("--days", type=int, default=0, help="Expiry in days (0 = use --perpetual or default 36500)")
     parser.add_argument("--perpetual", action="store_true", help="~100 year expiry")
@@ -93,10 +93,10 @@ def main():
         print(f"\nWrote {args.out}")
 
     # Convenience: also print install hint
-    home = Path.home() / ".wideledger" / "license.key"
+    home = Path.home() / ".trackmyroyalties" / "license.key"
     print(f"\nTo auto-unlock the desktop app for yourself:")
-    print(f"  mkdir -p ~/.wideledger")
-    print(f"  echo '{license_str}' > ~/.wideledger/license.key")
+    print(f"  mkdir -p ~/.trackmyroyalties")
+    print(f"  echo '{license_str}' > ~/.trackmyroyalties/license.key")
 
 
 if __name__ == "__main__":

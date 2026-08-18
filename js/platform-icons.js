@@ -1,5 +1,5 @@
 /**
- * WideLedger — real platform logos for platform cards.
+ * TrackMyRoyalties — real platform logos for platform cards.
  *
  * "svg" entries are inlined brand marks (from simple-icons, CC0) tinted via
  * currentColor so they pick up each platform's brand color from PLATFORMS.

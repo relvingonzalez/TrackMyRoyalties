@@ -1,5 +1,5 @@
 /**
- * WideLedger — main UI controller
+ * TrackMyRoyalties — main UI controller
  */
 (function () {
   const D = window.WideLedgerData;
@@ -7,6 +7,7 @@
   const Charts = window.WideLedgerCharts;
   const Lic = window.WideLedgerLicense;
   const PIcons = window.WideLedgerPlatformIcons;
+  const Brand = window.Brand;
 
   let state = D.loadState();
   let pendingImport = null;
@@ -76,13 +77,13 @@
     const vault = {
       ...state,
       premium: isPremium(),
-      _wideledger: {
-        format: "wideledger-vault",
+      [`_${Brand.slug}`]: {
+        format: `${Brand.slug}-vault`,
         version: 1,
         exportedAt: new Date().toISOString(),
       },
     };
-    downloadBlob(JSON.stringify(vault, null, 2), `wideledger-vault-${Date.now()}.json`, "application/json");
+    downloadBlob(JSON.stringify(vault, null, 2), `${Brand.slug}-vault-${Date.now()}.json`, "application/json");
     toast("Vault exported — save this file to move devices.");
     const st = $("#vault-status");
     if (st) st.textContent = "Vault downloaded. Keep it private if it includes your license key.";
@@ -99,12 +100,13 @@
       return;
     }
     if (!data || (data.royalties == null && data.books == null && !data.licenseKey)) {
-      toast("File does not look like a WideLedger vault.");
+      toast(`File does not look like a ${Brand.name} vault.`);
       return;
     }
     if (!confirm("Replace all data on this device with the vault file?")) return;
     state = { ...D.defaultState(), ...data };
-    delete state._wideledger;
+    delete state._wideledger; // pre-rebrand export marker, harmless if present
+    delete state[`_${Brand.slug}`];
     state.isDemo = !!data.isDemo;
     await refreshLicenseStatus();
     persist();
@@ -1034,7 +1036,7 @@
       btn.onclick = () => {
         const pid = btn.dataset.clearPlatform;
         const p = D.PLATFORMS.find((x) => x.id === pid);
-        if (!confirm(`Remove all ${p?.name || pid} data from WideLedger? This can't be undone — export a vault backup first if unsure.`)) return;
+        if (!confirm(`Remove all ${p?.name || pid} data from ${Brand.name}? This can't be undone — export a vault backup first if unsure.`)) return;
         D.removePlatformData(state, pid);
         persist();
         toast(`Cleared ${p?.name || pid}. Drop a new file to reload it.`);
@@ -1091,7 +1093,7 @@
         <li><strong>Prior Months’ Royalties</strong> = closer to what Amazon actually pays (finalized). Different number from Orders.</li>
         <li><strong>Payments / bank deposit</strong> = cash received (lags sales; withholding/tax).</li>
         <li><strong>Multiple Excel sheets</strong> are different views of the same period (by book, by format…). Import <em>one</em> detail sheet — never sum every tab.</li>
-        <li>Marketplace currencies may not all be USD; WideLedger stores the number as-is unless converted.</li>
+        <li>Marketplace currencies may not all be USD; ${Brand.name} stores the number as-is unless converted.</li>
         <li>Try another sheet in the dropdown above and watch the preview total change.</li>
       </ul>
       <span class="muted">Compare this preview’s <strong>Royalty total</strong> to the same figure inside Excel (select the royalty column → sum). If Excel sum ≠ preview, tell us — that’s a parser issue. If Excel sum = preview but ≠ KDP dashboard, use a different KDP report.</span>
@@ -1199,7 +1201,7 @@
           <ul>
             <li><strong>Orders (Lifetime)</strong> can include free promos, pre-orders, or estimated royalties — this total may not match the main KDP dashboard tile.</li>
             <li><strong>Prior Months' Royalties</strong> report is closer to what Amazon actually pays out (finalized); Orders is unit/order history.</li>
-            <li>Marketplace currencies may not all be USD; WideLedger stores the number as-is unless converted.</li>
+            <li>Marketplace currencies may not all be USD; ${Brand.name} stores the number as-is unless converted.</li>
             <li>If a total looks off, switch to "Pick one sheet manually" above to inspect a single tab.</li>
           </ul>`;
       }
@@ -1275,7 +1277,7 @@
     const formatWarn =
       s.formatUnknownRows > 0
         ? `<strong>${s.formatUnknownRows} of ${s.rowCount} rows didn't state ebook/paperback/hardcover/audiobook.</strong>
-           They'll import as "Unknown" — you can fix them in bulk afterwards on the <em>Books</em> page (each title has an editable format dropdown that re-tags every sale row for that title). This is usually the report's own layout, not a WideLedger bug — some KDP marketplace views and B&amp;N monthly summaries don't include a format/binding column at all.`
+           They'll import as "Unknown" — you can fix them in bulk afterwards on the <em>Books</em> page (each title has an editable format dropdown that re-tags every sale row for that title). This is usually the report's own layout, not a ${Brand.name} bug — some KDP marketplace views and B&amp;N monthly summaries don't include a format/binding column at all.`
         : "";
     warnEl.innerHTML = [kdpMismatchHelp(platformId, s), formatWarn].filter(Boolean).join("<hr style='border-color:var(--border);opacity:.4;margin:0.6rem 0'/>");
 
@@ -1363,7 +1365,7 @@
    * Multiple files dropped/selected at once: read + auto-detect each platform from its
    * headers (same detector the single-file path uses when no platform is forced), then
    * let the person confirm/adjust platform + replace-vs-add per file in one dialog.
-   * This is the practical version of "just reload and it grabs everything" — WideLedger
+   * This is the practical version of "just reload and it grabs everything" — the app
    * still never logs into any store, but you can drag your whole Downloads folder in.
    */
   async function handleFiles(fileList) {
@@ -1828,7 +1830,7 @@
     state.expenses.forEach((e) => {
       lines.push([e.date, e.categoryId, e.amount, csvEscape(e.note || "")].join(","));
     });
-    downloadBlob(lines.join("\n"), `wideledger-export-${Date.now()}.csv`, "text/csv");
+    downloadBlob(lines.join("\n"), `${Brand.slug}-export-${Date.now()}.csv`, "text/csv");
     toast("CSV downloaded.");
   }
 
@@ -1838,7 +1840,7 @@
       navigate("premium");
       return;
     }
-    downloadBlob(JSON.stringify(state, null, 2), `wideledger-backup-${Date.now()}.json`, "application/json");
+    downloadBlob(JSON.stringify(state, null, 2), `${Brand.slug}-backup-${Date.now()}.json`, "application/json");
     toast("JSON backup downloaded.");
   }
 
@@ -1903,9 +1905,9 @@
       "Buy Premium ($9.99)",
       `<p>In production this opens <strong>Stripe Checkout</strong> or the <strong>App Store</strong>, then emails a signed <code>WL1.…</code> license.</p>
        <p class="muted">For now (local testing): mint a key with your private key:</p>
-       <pre style="background:var(--bg-elevated);padding:0.75rem;border-radius:8px;overflow:auto;font-size:0.8rem">cd ~/WideLedger
+       <pre style="background:var(--bg-elevated);padding:0.75rem;border-radius:8px;overflow:auto;font-size:0.8rem">cd ~/${Brand.name}
 .venv/bin/python tools/generate_license.py --name "Customer" --perpetual</pre>
-       <p class="muted">Your owner key is already in <code>~/.wideledger/license.key</code> for the desktop app.</p>`,
+       <p class="muted">Your owner key is already in <code>~/.${Brand.slug}/license.key</code> for the desktop app.</p>`,
       `<button type="button" class="btn primary" data-close>Got it</button>`
     );
     $$("[data-close]").forEach((b) => (b.onclick = closeModal));
@@ -2354,7 +2356,7 @@
       e.target.value = "";
     });
     $("#reset-data")?.addEventListener("click", async () => {
-      if (confirm("Delete all local WideLedger data on this device?")) {
+      if (confirm(`Delete all local ${Brand.name} data on this device?`)) {
         state = D.defaultState();
         state.firstVisit = false;
         premiumVerified = false;

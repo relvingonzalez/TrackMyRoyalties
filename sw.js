@@ -1,9 +1,12 @@
-/* WideLedger offline shell */
-const CACHE = "wideledger-v2";
+/* TrackMyRoyalties offline shell */
+// Cache name is a static literal, not read from js/brand.js — service workers don't share
+// the page's window scope, and brand.js touches `document`, which doesn't exist here.
+const CACHE = "trackmyroyalties-v1";
 const ASSETS = [
   "./",
   "./index.html",
   "./css/app.css",
+  "./js/brand.js",
   "./js/data.js",
   "./js/platform-icons.js",
   "./js/import.js",

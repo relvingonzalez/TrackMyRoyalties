@@ -1,15 +1,15 @@
-# How to test WideLedger (desktop + Premium)
+# How to test TrackMyRoyalties (desktop + Premium)
 
 ## What you have
 
 | Piece | Role |
 |--------|------|
-| Web UI in `~/WideLedger` | The real product (local-first) |
+| Web UI in `~/TrackMyRoyalties` | The real product (local-first) |
 | `desktop/app.py` | Desktop window shell (pywebview) |
-| `Launch WideLedger.command` | Double-click on Mac to open the app |
+| `Launch TrackMyRoyalties.command` | Double-click on Mac to open the app |
 | Signed licenses (`WL1.…`) | Only way to unlock Premium |
 | `tools/keys/private.pem` | **Your secret** — mint licenses. Never share or ship. |
-| `~/.wideledger/license.key` | Your personal license (auto-loaded by desktop) |
+| `~/.trackmyroyalties/license.key` | Your personal license (auto-loaded by desktop) |
 
 This is **not** on the App Store yet. It is a **desktop app wrapper** around the local web app — good for real testing on your Mac.
 
@@ -19,29 +19,29 @@ This is **not** on the App Store yet. It is a **desktop app wrapper** around the
 
 **Option A — double-click**
 
-Finder → `WideLedger` → **Launch WideLedger.command**  
+Finder → `TrackMyRoyalties` → **Launch TrackMyRoyalties.command**  
 (First time: macOS may ask to allow Terminal / local network.)
 
 **Option B — terminal**
 
 ```bash
-cd ~/WideLedger
+cd ~/TrackMyRoyalties
 .venv/bin/python desktop/app.py
 ```
 
-You should get a native window titled **WideLedger**. If `~/.wideledger/license.key` exists, Premium should auto-activate after a brief reload.
+You should get a native window titled **TrackMyRoyalties**. If `~/.trackmyroyalties/license.key` exists, Premium should auto-activate after a brief reload.
 
 ---
 
 ## Browser testing (also fine)
 
 ```bash
-cd ~/WideLedger
+cd ~/TrackMyRoyalties
 python3 -m http.server 8787
 # open http://localhost:8787
 ```
 
-Paste a license under **Premium** (browser won’t read `~/.wideledger` automatically).
+Paste a license under **Premium** (browser won’t read `~/.trackmyroyalties` automatically).
 
 > Use `http://localhost`, not `file://` — Web Crypto needs a secure context.
 
@@ -57,7 +57,7 @@ Paste a license under **Premium** (browser won’t read `~/.wideledger` automati
 ### Mint a license (you only)
 
 ```bash
-cd ~/WideLedger
+cd ~/TrackMyRoyalties
 .venv/bin/python tools/generate_license.py --name "Test Customer" --perpetual
 ```
 
@@ -66,15 +66,15 @@ Copy the `WL1.…` line → app → **Premium** → paste → **Activate license
 ### Your owner bypass (already set up)
 
 ```text
-~/.wideledger/license.key     # used by desktop auto-unlock
-~/WideLedger/tools/owner.license   # same key, project copy
+~/.trackmyroyalties/license.key     # used by desktop auto-unlock
+~/TrackMyRoyalties/tools/owner.license   # same key, project copy
 ```
 
 Regenerate anytime:
 
 ```bash
 .venv/bin/python tools/generate_license.py --name "Relvin (owner)" --perpetual --out tools/owner.license
-cp tools/owner.license ~/.wideledger/license.key
+cp tools/owner.license ~/.trackmyroyalties/license.key
 ```
 
 ---
@@ -90,7 +90,7 @@ cp tools/owner.license ~/.wideledger/license.key
 
 ## Is this “an app”? How real apps lock Premium
 
-| Approach | Crack resistance | Fits WideLedger? |
+| Approach | Crack resistance | Fits TrackMyRoyalties? |
 |----------|------------------|------------------|
 | **localStorage flag** (old MVP) | Trivial | Removed |
 | **Signed offline license** (now) | Forging keys hard; patching JS still possible | Best local-first option |
@@ -112,7 +112,7 @@ That’s the same model as many indie desktop tools (license keys).
 ## Quick test checklist
 
 - [ ] Launch desktop app → Free badge without license file removed/renamed
-- [ ] Restore `~/.wideledger/license.key` → relaunch → Premium badge
+- [ ] Restore `~/.trackmyroyalties/license.key` → relaunch → Premium badge
 - [ ] Free: only 2 platforms for *new* imports; range capped
 - [ ] Premium: tax monthly table unlocked; CSV export works
 - [ ] Export vault → Reset data → Import vault → data + license return

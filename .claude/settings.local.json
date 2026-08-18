@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python3 drive2.py)"
+      "Bash(python3 drive2.py)",
+      "Bash(python3 -c \"import ast; ast.parse\\(open\\('/home/relvin/Projects/OtsanLLC/WideLedger/desktop/app.py'\\).read\\(\\)\\)\")"
     ]
   }
 }
