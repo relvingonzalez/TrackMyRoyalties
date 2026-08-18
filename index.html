@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f1419" />
+  <meta name="description" content="WideLedger — one dashboard for author income, expenses, and true profit across every publishing platform." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="WideLedger" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23c9a227'/%3E%3Cpath d='M16 44V20h8.5c6 0 10 3.2 10 8.2 0 3.4-1.8 6-4.8 7.2L38 44h-7.2l-6.8-8.4H23V44H16zm7-14.2h1.6c2.6 0 4.2-1.3 4.2-3.5S27.2 23 24.6 23H23v6.8zM40 44l8-24h7.2l8 24h-7l-1.4-4.6H48.4L47 44H40zm9.4-10.2h5.2l-2.6-8.4-2.6 8.4z' fill='%230f1419'/%3E%3C/svg%3E" />
+  <title>WideLedger — Author Income &amp; Profit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+  <!-- SheetJS: KDP/B&N Excel (.xlsx) reports -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+  <script src="js/data.js" defer></script>
+  <script src="js/platform-icons.js" defer></script>
+  <script src="js/license.js" defer></script>
+  <script src="js/import.js" defer></script>
+  <script src="js/charts.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <div id="app">
+    <!-- Landing (shown when empty / first visit without skip) -->
+    <section id="view-landing" class="view landing hidden">
+      <header class="landing-nav">
+        <div class="brand">
+          <span class="brand-mark">W</span>
+          <span class="brand-name">WideLedger</span>
+        </div>
+        <div class="landing-nav-actions">
+          <button type="button" class="btn ghost" data-action="enter-app">Open app</button>
+          <button type="button" class="btn primary" data-action="load-demo">Try demo data</button>
+        </div>
+      </header>
+
+      <div class="landing-hero">
+        <p class="eyebrow">Built for wide authors · Privacy-first · One-time unlock</p>
+        <h1>All your royalties.<br /><em>True profit.</em> One place.</h1>
+        <p class="lede">
+          Stop hopping between KDP, Kobo, D2D, Apple, IngramSpark, and B&amp;N.
+          See income, expenses, and ad spend together — without another monthly subscription
+          that scales with your success.
+        </p>
+        <div class="hero-cta">
+          <button type="button" class="btn primary lg" data-action="load-demo">Explore with demo data</button>
+          <button type="button" class="btn secondary lg" data-action="enter-app">Start empty</button>
+        </div>
+        <p class="hero-note">Free forever for core tracking · Premium is a one-time $9.99 unlock · Your data stays on this device</p>
+      </div>
+
+      <section class="pain-grid">
+        <h2>What authors actually complain about</h2>
+        <p class="section-sub">Synthesized from r/selfpublish, r/KDP, ALLi threads, and comparisons of Book Report, ScribeCount, PublishWide &amp; Publisher Champ.</p>
+        <div class="cards-3">
+          <article class="card">
+            <h3>Subscription tax on success</h3>
+            <p>Competitors charge $10–$249/mo and often raise the tier as you earn more. WideLedger: free core + <strong>one-time $9.99</strong> for everything else.</p>
+          </article>
+          <article class="card">
+            <h3>Income ≠ profit</h3>
+            <p>Sales dashboards ignore cover art, editors, AMS, Meta, BookBub, and ISBNs. We track <strong>expenses + ads</strong> so you see real net.</p>
+          </article>
+          <article class="card">
+            <h3>Password re-login hell</h3>
+            <p>Amazon has no public KDP API; scrapers break and re-auth constantly. We use <strong>CSV / report upload</strong> — no platform passwords stored. Ever.</p>
+          </article>
+          <article class="card">
+            <h3>Dashboard fatigue</h3>
+            <p>~15 minutes a day across stores adds up to nearly 100 hours/year. One filterable view for <strong>all platforms or one at a time</strong>.</p>
+          </article>
+          <article class="card">
+            <h3>Privacy anxiety</h3>
+            <p>Local-first by default. Data lives in your browser. Export anytime. No “give us your KDP login” model.</p>
+          </article>
+          <article class="card">
+            <h3>Tax-season chaos</h3>
+            <p>Premium unlocks year summaries, CSV/JSON export, and clean totals for Schedule C / accountant handoff.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="platforms-strip">
+        <h2>Platforms</h2>
+        <div class="platform-pills" id="landing-platforms"></div>
+      </section>
+    </section>
+
+    <!-- App shell -->
+    <section id="view-app" class="view app-shell hidden">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand compact">
+          <span class="brand-mark">W</span>
+          <span class="brand-name">WideLedger</span>
+        </div>
+        <nav class="side-nav">
+          <button type="button" class="nav-item active" data-nav="dashboard">Dashboard</button>
+          <button type="button" class="nav-item" data-nav="platforms">Platforms</button>
+          <button type="button" class="nav-item" data-nav="books">Titles</button>
+          <button type="button" class="nav-item" data-nav="expenses">Expenses</button>
+          <button type="button" class="nav-item" data-nav="import">Import</button>
+          <button type="button" class="nav-item" data-nav="tax">Tax &amp; export</button>
+          <button type="button" class="nav-item" data-nav="premium">Premium</button>
+          <button type="button" class="nav-item" data-nav="settings">Settings</button>
+        </nav>
+        <div class="sidebar-foot">
+          <div id="premium-badge" class="premium-badge free">Free plan</div>
+          <p class="muted tiny">Data stays on this device</p>
+          <p class="muted tiny" id="build-stamp" style="opacity:0.5">build: unknown</p>
+        </div>
+      </aside>
+
+      <div class="main">
+        <header class="topbar">
+          <button type="button" class="icon-btn mobile-only" id="menu-toggle" aria-label="Menu">☰</button>
+          <div class="topbar-filters">
+            <label class="field inline">
+              <span>Range</span>
+              <select id="range-select">
+                <option value="7d">Last 7 days</option>
+                <option value="30d" selected>Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+                <option value="ytd">Year to date</option>
+                <option value="12m">Last 12 months</option>
+                <option value="all">All time</option>
+                <option value="custom">Custom…</option>
+              </select>
+            </label>
+            <div id="custom-range" class="custom-range hidden">
+              <input type="date" id="range-from" />
+              <span class="muted">→</span>
+              <input type="date" id="range-to" />
+            </div>
+            <label class="field inline">
+              <span>Platform</span>
+              <select id="platform-select">
+                <option value="all">All platforms</option>
+              </select>
+            </label>
+          </div>
+          <div class="topbar-actions">
+            <button type="button" class="btn ghost sm" id="btn-load-demo" data-action="load-demo" title="Load sample author data (can be removed later)">Demo</button>
+            <button type="button" class="btn secondary sm" data-nav="import">+ Import</button>
+          </div>
+        </header>
+
+        <div id="demo-banner" class="demo-banner hidden" role="status">
+          <div class="demo-banner-text">
+            <strong>Demo data is active</strong>
+            <span class="muted"> — sample author numbers, not your royalties.</span>
+          </div>
+          <div class="demo-banner-actions">
+            <button type="button" class="btn secondary sm" id="btn-restore-pre-demo" hidden>Restore my previous data</button>
+            <button type="button" class="btn primary sm" id="btn-clear-demo">Remove demo data</button>
+          </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="page-dashboard" class="page">
+          <div class="page-head">
+            <div>
+              <h1>Overview</h1>
+              <p class="muted" id="dashboard-subtitle">Income, spend, and net across your catalog</p>
+            </div>
+            <div id="dashboard-platform-logo" class="dashboard-platform-logo"></div>
+          </div>
+
+          <div class="kpi-grid" id="kpi-grid"></div>
+
+          <div class="grid-2">
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Royalties over time</h2>
+                <div class="row gap">
+                  <span class="muted tiny" id="income-chart-hint">By day</span>
+                  <button type="button" class="btn ghost sm" id="add-annotation-btn">+ Annotate</button>
+                </div>
+              </div>
+              <div class="chart-wrap"><canvas id="chart-income"></canvas></div>
+              <div class="chart-annotations" id="chart-annotations-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>By platform</h2>
+                <span class="muted tiny">Share of royalties</span>
+              </div>
+              <div class="chart-wrap"><canvas id="chart-platforms"></canvas></div>
+            </section>
+          </div>
+
+          <div class="grid-2">
+            <section class="panel">
+              <div class="panel-head">
+                <h2>By format</h2>
+                <span class="muted tiny">Ebook · paperback · hardcover · KU (with $ amounts)</span>
+              </div>
+              <div class="chart-wrap"><canvas id="chart-format"></canvas></div>
+              <div id="format-breakdown" class="list-table" style="margin-top:0.5rem"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Income vs expenses</h2>
+                <span class="muted tiny">True P&amp;L</span>
+              </div>
+              <div class="chart-wrap"><canvas id="chart-pnl"></canvas></div>
+            </section>
+          </div>
+
+          <div class="grid-2">
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Top titles</h2>
+                <span class="muted tiny">Selected range</span>
+              </div>
+              <div id="top-titles" class="list-table"></div>
+            </section>
+            <section class="panel" style="min-height:0">
+              <div class="panel-head">
+                <h2>Sales vs paid (quick guide)</h2>
+              </div>
+              <ul class="muted" style="margin:0;padding-left:1.1rem;font-size:0.9rem;line-height:1.5">
+                <li><strong>Orders / sales activity</strong> — when someone bought (or free promo); royalties may still be estimates.</li>
+                <li><strong>Prior months’ royalties</strong> — closer to what the store actually pays out.</li>
+                <li><strong>Bank deposit</strong> — cash received (lags; tax withholding).</li>
+              </ul>
+            </section>
+          </div>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Insights</h2>
+              <span class="muted tiny">Auto-generated from your data</span>
+            </div>
+            <ul id="insights-list" class="insights"></ul>
+          </section>
+        </div>
+
+        <!-- Platforms -->
+        <div id="page-platforms" class="page hidden">
+          <div class="page-head">
+            <div>
+              <h1>Platforms</h1>
+              <p class="muted">Connect via report upload — no passwords. Drill into one store or compare all.</p>
+            </div>
+          </div>
+          <div id="platform-cards" class="platform-cards"></div>
+          <p class="muted tiny" id="platform-general-spend" style="margin-top:1rem"></p>
+        </div>
+
+        <!-- Books -->
+        <div id="page-books" class="page hidden">
+          <div class="page-head">
+            <div>
+              <h1>Titles</h1>
+              <p class="muted">Group by series, pen name, and format.</p>
+            </div>
+            <button type="button" class="btn secondary sm" id="add-book-btn">Add title</button>
+          </div>
+          <div class="panel">
+            <div class="table-scroll">
+              <table class="data-table" id="books-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Series</th>
+                    <th>Pen name</th>
+                    <th>Format</th>
+                    <th class="num">Units</th>
+                    <th class="num">Royalties</th>
+                    <th class="num">KENP</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel" id="read-through-panel" hidden>
+            <div class="panel-head">
+              <h2>Series read-through</h2>
+              <span class="muted tiny">Book 2+ units as a % of Book 1 in the same series, all-time · set "Book # in series" on a title to control order</span>
+            </div>
+            <div id="read-through-body"></div>
+          </div>
+        </div>
+
+        <!-- Expenses -->
+        <div id="page-expenses" class="page hidden">
+          <div class="page-head">
+            <div>
+              <h1>Expenses &amp; ads</h1>
+              <p class="muted">The missing half of every royalty dashboard. Covers, editing, ISBNs, AMS, Meta, BookBub…</p>
+            </div>
+            <div class="row gap">
+              <button type="button" class="btn secondary sm" id="goto-expense-import-btn">Import from file</button>
+              <button type="button" class="btn primary sm" id="add-expense-btn">Add expense</button>
+            </div>
+          </div>
+          <div class="kpi-grid compact" id="expense-kpis"></div>
+          <div class="grid-2">
+            <section class="panel">
+              <div class="panel-head"><h2>By category</h2></div>
+              <div class="chart-wrap sm"><canvas id="chart-expenses"></canvas></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h2>Recent expenses</h2></div>
+              <div id="expense-list" class="list-table"></div>
+            </section>
+          </div>
+        </div>
+
+        <!-- Import -->
+        <div id="page-import" class="page hidden">
+          <div class="page-head">
+            <div>
+              <h1>Import &amp; transfer</h1>
+              <p class="muted">Upload store CSVs, or move your whole vault between browsers and devices — no account, no database.</p>
+            </div>
+          </div>
+
+          <section class="panel vault-panel">
+            <div class="panel-head">
+              <h2>Vault (full backup)</h2>
+              <span class="muted tiny">Free · one file for a new laptop or browser</span>
+            </div>
+            <p class="muted" style="margin-top:0">
+              Exports royalties, expenses, titles, platform links, and your license key (if any).
+              Save to iCloud/Dropbox/USB, then restore on another device.
+            </p>
+            <div class="row gap wrap">
+              <button type="button" class="btn primary sm" id="vault-export">Export vault (.json)</button>
+              <label class="btn secondary sm file-btn">
+                Import vault
+                <input type="file" id="vault-import" accept="application/json,.json" hidden />
+              </label>
+            </div>
+            <p class="muted tiny" id="vault-status"></p>
+          </section>
+
+          <div class="import-grid">
+            <section class="panel">
+              <h2>Drop a report</h2>
+              <div class="dropzone" id="dropzone">
+                <!-- Input covers the zone so click works in desktop WebView (programmatic .click() is blocked) -->
+                <input
+                  type="file"
+                  id="import-file"
+                  class="dropzone-file"
+                  accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,text/csv,text/plain,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel.sheet.macroEnabled.12,*/*"
+                  title="Choose a CSV or Excel (.xlsx) report — you can select more than one at once"
+                  multiple
+                />
+                <div class="dropzone-inner">
+                  <strong>Click or drop CSV or Excel (.xlsx)</strong>
+                  <span class="muted">KDP Orders Lifetime export, B&amp;N, Kobo, D2D… (Excel enabled). Drop several files at once and WideLedger will guess each one's platform.</span>
+                </div>
+              </div>
+              <label class="field">
+                <span>Treat as platform</span>
+                <select id="import-platform"></select>
+              </label>
+              <label class="field checkbox" id="import-replace-wrap" hidden>
+                <input type="checkbox" id="import-replace" />
+                <span id="import-replace-note">Replace existing data for this platform instead of adding to it</span>
+              </label>
+              <div id="import-preview" class="import-preview hidden">
+                <h3>Preview — compare to your store before importing</h3>
+
+                <div id="import-kdp-smart" class="kdp-smart-banner hidden">
+                  <p><strong>This looks like a KDP Orders (Lifetime) report.</strong> It has several sheets — one per format, plus rollups. WideLedger can combine the per-format Royalty + KENP sheets automatically (recommended), tagging each row's format from its sheet name since these sheets don't have a Format column.</p>
+                  <div class="row gap wrap" style="margin:0.5rem 0">
+                    <label class="field inline">
+                      <input type="radio" name="import-mode" id="import-mode-smart" checked />
+                      <span>Combine per-format sheets automatically (recommended)</span>
+                    </label>
+                    <label class="field inline">
+                      <input type="radio" name="import-mode" id="import-mode-manual" />
+                      <span>Pick one sheet manually instead</span>
+                    </label>
+                  </div>
+                  <div class="table-scroll">
+                    <table class="data-table compact" id="kdp-smart-table">
+                      <thead>
+                        <tr>
+                          <th>Sheet</th>
+                          <th>Format tagged as</th>
+                          <th class="num">Rows</th>
+                          <th class="num">Royalty</th>
+                        </tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                  <p class="muted tiny" id="kdp-smart-excluded"></p>
+                </div>
+
+                <label class="field" id="import-sheet-wrap" hidden>
+                  <span>Excel sheet (KDP files have several views)</span>
+                  <select id="import-sheet"></select>
+                </label>
+                <div id="import-preview-stats" class="import-preview-stats"></div>
+                <div id="import-preview-map" class="muted tiny"></div>
+                <div id="import-preview-warn" class="import-preview-warn"></div>
+                <div class="table-scroll" style="margin-top:0.75rem" id="import-preview-table-wrap">
+                  <table class="data-table compact" id="import-preview-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Title</th>
+                        <th class="num">Units</th>
+                        <th class="num">Royalty</th>
+                        <th>Type</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+              <button type="button" class="btn primary" id="import-run" disabled>Import these rows</button>
+              <p class="muted tiny" id="import-status">No file selected yet.</p>
+            </section>
+            <section class="panel">
+              <h2>How to export from each store</h2>
+              <div id="export-guides" class="export-guides"></div>
+            </section>
+          </div>
+          <section class="panel" id="import-summary-panel" hidden>
+            <div class="panel-head">
+              <h2>Your imports</h2>
+              <span class="muted tiny">What's currently loaded, per platform — clear one to reload it fresh</span>
+            </div>
+            <div class="table-scroll" id="import-summary"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Import expenses (CSV/Excel)</h2>
+              <span class="muted tiny">Any item + cost list — receipts export, spreadsheet, credit card CSV</span>
+            </div>
+            <div class="dropzone" id="expense-dropzone">
+              <input
+                type="file"
+                id="expense-import-file"
+                class="dropzone-file"
+                accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,text/csv,text/plain,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*"
+                title="Choose a CSV or Excel file with an item and cost per row"
+              />
+              <div class="dropzone-inner">
+                <strong>Click or drop a CSV or Excel file</strong>
+                <span class="muted">Needs an item/description column and a cost/amount column. Date and category are optional.</span>
+              </div>
+            </div>
+            <div id="expense-import-preview" class="import-preview hidden">
+              <h3>Preview — edit anything before importing</h3>
+              <label class="field" id="expense-import-year-wrap" hidden>
+                <span>No date column found — file all these under year:</span>
+                <select id="expense-import-year"></select>
+              </label>
+              <div class="table-scroll" style="margin-top:0.5rem">
+                <table class="data-table compact" id="expense-import-table">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th class="num">Cost</th>
+                      <th>Date</th>
+                      <th>Category</th>
+                      <th>Platform</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div class="import-preview-stats" style="margin-top:0.5rem">
+                <div class="stat"><div class="lbl">Rows</div><div class="val" id="expense-import-count">0</div></div>
+                <div class="stat"><div class="lbl">Total</div><div class="val" id="expense-import-total">$0.00</div></div>
+              </div>
+            </div>
+            <button type="button" class="btn primary" id="expense-import-run" disabled style="margin-top:0.75rem">Import these expenses</button>
+            <p class="muted tiny" id="expense-import-status">No file selected yet.</p>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Manual royalty entry</h2>
+              <span class="muted tiny">When a store only shows a monthly total</span>
+            </div>
+            <form id="manual-entry" class="form-grid">
+              <label class="field"><span>Date</span><input type="date" name="date" required /></label>
+              <label class="field"><span>Platform</span><select name="platform" id="manual-platform" required></select></label>
+              <label class="field"><span>Title (optional)</span><input type="text" name="title" placeholder="Book title" /></label>
+              <label class="field"><span>Royalties (USD)</span><input type="number" name="royalty" step="0.01" required /></label>
+              <label class="field"><span>Units</span><input type="number" name="units" step="1" value="0" /></label>
+              <label class="field"><span>KENP / pages</span><input type="number" name="kenp" step="1" value="0" /></label>
+              <button type="submit" class="btn secondary">Add entry</button>
+            </form>
+          </section>
+        </div>
+
+        <!-- Tax -->
+        <div id="page-tax" class="page hidden">
+          <div class="page-head">
+            <div>
+              <h1>Tax &amp; export</h1>
+              <p class="muted">Year totals for your accountant — not tax advice.</p>
+            </div>
+            <div class="row gap">
+              <select id="tax-year"></select>
+              <button type="button" class="btn secondary sm" id="export-csv">Export CSV</button>
+              <button type="button" class="btn secondary sm" id="export-json">Export JSON</button>
+            </div>
+          </div>
+          <div id="tax-summary" class="kpi-grid"></div>
+          <div class="panel premium-lock" id="tax-detail-panel">
+            <div class="panel-head"><h2>Monthly breakdown</h2></div>
+            <div id="tax-monthly" class="table-scroll"></div>
+          </div>
+        </div>
+
+        <!-- Premium -->
+        <div id="page-premium" class="page hidden">
+          <div class="page-head">
+            <div>
+              <h1>Premium</h1>
+              <p class="muted">One purchase. Locked until a signed license is activated.</p>
+            </div>
+          </div>
+          <div class="premium-hero panel">
+            <div>
+              <p class="eyebrow gold">Author-friendly pricing</p>
+              <h2>Unlock everything for <span class="price">$9.99</span> once</h2>
+              <p>Competitors charge $10–$29+/month and often tier by income. WideLedger stays free for core tracking; Premium is a one-time unlock via a <strong>cryptographically signed license</strong>.</p>
+              <ul class="check-list">
+                <li>Unlimited platforms (free: 2)</li>
+                <li>Full history &amp; custom ranges beyond 12 months</li>
+                <li>Tax year breakdown + accountant exports</li>
+                <li>Series &amp; pen-name analytics (roadmap)</li>
+                <li>Period compare (roadmap)</li>
+              </ul>
+
+              <div id="premium-active" class="hidden">
+                <p class="status-ok"><strong>Premium active</strong></p>
+                <p class="muted tiny" id="premium-meta"></p>
+                <button type="button" class="btn ghost sm" id="deactivate-license">Remove license from this device</button>
+              </div>
+
+              <div id="premium-locked">
+                <label class="field" style="margin-top:1rem">
+                  <span>Paste license key (WL1.…)</span>
+                  <textarea id="license-input" rows="3" placeholder="WL1.eyJ…signature" style="resize:vertical;min-height:4.5rem"></textarea>
+                </label>
+                <div class="row gap wrap" style="margin-top:0.75rem">
+                  <button type="button" class="btn primary" id="activate-license">Activate license</button>
+                  <button type="button" class="btn secondary" id="buy-premium" title="Wire to Stripe / App Store later">Buy $9.99…</button>
+                </div>
+                <p class="muted tiny" id="premium-note" style="margin-top:0.75rem">
+                  Keys are ECDSA-signed. Only keys made with the private key on the seller machine work. Setting <code>premium: true</code> in storage does nothing.
+                </p>
+                <p class="muted tiny" id="license-error" style="color:var(--red)"></p>
+              </div>
+            </div>
+            <div class="premium-compare">
+              <h3>vs typical trackers</h3>
+              <table class="data-table compact">
+                <thead><tr><th></th><th>Others</th><th>WideLedger</th></tr></thead>
+                <tbody>
+                  <tr><td>Pricing</td><td>$10–249/mo</td><td><strong>$0 + $9.99 once</strong></td></tr>
+                  <tr><td>Scales with income?</td><td>Often yes</td><td>Never</td></tr>
+                  <tr><td>Needs platform password?</td><td>Often</td><td>No</td></tr>
+                  <tr><td>Expenses &amp; ads</td><td>Mixed</td><td>Built-in</td></tr>
+                  <tr><td>Data location</td><td>Their cloud</td><td>Your device</td></tr>
+                  <tr><td>Accounts required?</td><td>Usually</td><td>No</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <div id="page-settings" class="page hidden">
+          <div class="page-head">
+            <div>
+              <h1>Settings</h1>
+              <p class="muted">Currency display, data controls, and about.</p>
+            </div>
+          </div>
+          <div class="grid-2">
+            <section class="panel">
+              <h2>Preferences</h2>
+              <label class="field">
+                <span>Display currency</span>
+                <select id="currency-select">
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="CAD">CAD (C$)</option>
+                  <option value="AUD">AUD (A$)</option>
+                </select>
+              </label>
+              <label class="field checkbox">
+                <input type="checkbox" id="show-kenp" checked />
+                <span>Show KENP / page-read metrics</span>
+              </label>
+              <label class="field checkbox">
+                <input type="checkbox" id="compact-mode" />
+                <span>Compact dashboard</span>
+              </label>
+            </section>
+            <section class="panel danger-zone">
+              <h2>Data</h2>
+              <p class="muted">Everything is stored on this device (local storage). Use <strong>Import → Vault</strong> to move between devices.</p>
+              <div class="row gap wrap">
+                <button type="button" class="btn secondary sm" id="export-backup">Export vault</button>
+                <label class="btn secondary sm file-btn">
+                  Import vault
+                  <input type="file" id="restore-backup" accept="application/json,.json" hidden />
+                </label>
+                <button type="button" class="btn secondary sm" id="btn-clear-demo-settings" title="Remove sample royalties/expenses; keeps license">Remove demo / clear sales data</button>
+                <button type="button" class="btn ghost sm" id="btn-load-demo-settings" data-action="load-demo">Load demo data</button>
+                <button type="button" class="btn danger sm" id="reset-data">Reset all data</button>
+              </div>
+              <p class="muted tiny" id="demo-settings-hint"></p>
+            </section>
+          </div>
+          <section class="panel">
+            <h2>About &amp; roadmap</h2>
+            <p><strong>WideLedger MVP</strong> — local-first author P&amp;L for wide publishing.</p>
+            <ul class="muted">
+              <li><strong>Now:</strong> CSV import, multi-platform P&amp;L, expenses, freemium unlock, PWA install.</li>
+              <li><strong>Next:</strong> Capacitor iOS/macOS wrapper for App Store, optional encrypted cloud sync, Amazon Ads CSV ROI matcher.</li>
+              <li><strong>Not planned:</strong> Asking for KDP passwords or fragile full-account scraping as the primary model.</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modals -->
+  <div id="modal-root" class="modal-root hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+      <header class="modal-head">
+        <h2 id="modal-title">Dialog</h2>
+        <button type="button" class="icon-btn" id="modal-close" aria-label="Close">×</button>
+      </header>
+      <div id="modal-body" class="modal-body"></div>
+      <footer class="modal-foot" id="modal-foot"></footer>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+</body>
+</html>

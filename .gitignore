@@ -1,0 +1,8 @@
+.DS_Store
+._*
+.venv/
+__pycache__/
+*.pyc
+tools/keys/
+*.license
+*.log
