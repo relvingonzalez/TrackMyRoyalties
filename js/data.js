@@ -79,16 +79,31 @@
     };
   }
 
-  /** Record metadata about one completed import so it can be reviewed or undone later. */
+  /**
+   * Record metadata about one completed import so it can be reviewed or undone later.
+   * batch: {id, platformId, fileName, fileHash, kind ("royalty"|"expense"), sheetName,
+   * importedAt, rowCount, royaltyTotal} — royaltyTotal doubles as the expense-dollar-total
+   * for kind:"expense" batches (never displayed by that name, just a stored total).
+   */
   function addImportBatch(state, batch) {
     state.importBatches = state.importBatches || [];
     state.importBatches.push(batch);
     return state;
   }
 
+  /** Find a prior import of the exact same file content (by hash), so re-imports of the
+   * same file — via manual drop or, later, a watched folder — can be caught before they
+   * silently duplicate every row. Scoped by `kind` since a royalty file and an expense file
+   * are different universes even if (implausibly) their bytes ever matched. */
+  function findImportBatchByHash(state, fileHash, kind) {
+    if (!fileHash) return null;
+    return (state.importBatches || []).find((b) => b.fileHash === fileHash && b.kind === kind) || null;
+  }
+
   /** Remove just the rows that came from one specific import (keeps other imports for the same platform). */
   function removeBatch(state, batchId) {
     state.royalties = (state.royalties || []).filter((r) => r.batchId !== batchId);
+    state.expenses = (state.expenses || []).filter((e) => e.batchId !== batchId);
     state.importBatches = (state.importBatches || []).filter((b) => b.id !== batchId);
     return state;
   }
@@ -651,6 +666,7 @@
     clearPreDemoSnapshot,
     clearCatalogData,
     addImportBatch,
+    findImportBatchByHash,
     removeBatch,
     removePlatformData,
     platformBatches,

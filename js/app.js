@@ -1315,9 +1315,20 @@
   }
 
   /** Read a File into { name, text, sheets, sheetName, sizeKb }, handling both CSV/TSV/TXT and Excel. */
+  /** Content fingerprint of the raw file bytes (not the parsed text) — used to recognize
+   * "this exact file was already imported" regardless of platform tag or parse path. */
+  async function hashFile(file) {
+    const buf = await file.arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
   async function readFileToPayload(file) {
     const name = file.name || "report";
     const sizeKb = Math.round(file.size / 1024);
+    const hash = await hashFile(file);
 
     if (Imp.isExcelFile && Imp.isExcelFile(name, file.type)) {
       if (typeof XLSX === "undefined") {
@@ -1334,6 +1345,7 @@
         sheets: wbInfo.sheets,
         kdpSmart: kdpSmart && kdpSmart.ok ? kdpSmart : null,
         sizeKb,
+        hash,
       };
     }
 
@@ -1344,7 +1356,7 @@
       reader.readAsText(file);
     });
     if (!text.trim()) throw new Error(`${name} looks empty.`);
-    return { name, text, sheets: null, sheetName: null, sizeKb };
+    return { name, text, sheets: null, sheetName: null, sizeKb, hash };
   }
 
   async function handleFile(file) {
@@ -1397,6 +1409,7 @@
         results.push({
           name: payload.name,
           text: payload.text,
+          hash: payload.hash,
           sheetName: payload.sheetName,
           ok: parsed.ok,
           error: parsed.error,
@@ -1411,7 +1424,7 @@
   }
 
   /** Shared commit path for both single-file and bulk import — normalizes rows, matches/creates books, tracks the batch. */
-  function commitImportRows(rows, platformId, { fileName, sheetName, replace }) {
+  function commitImportRows(rows, platformId, { fileName, sheetName, replace, fileHash }) {
     if (replace) D.removePlatformData(state, platformId);
 
     const batchId = D.uid("batch");
@@ -1450,6 +1463,8 @@
       id: batchId,
       platformId,
       fileName: fileName || "manual",
+      fileHash: fileHash || null,
+      kind: "royalty",
       sheetName: sheetName || null,
       importedAt: new Date().toISOString(),
       rowCount: rows.length,
@@ -1476,10 +1491,15 @@
         }
         const total = r.rows.reduce((s, x) => s + (x.royalty || 0), 0);
         const existing = state.royalties.filter((x) => x.platformId === r.platformId);
+        const dupBatch = D.findImportBatchByHash(state, r.hash, "royalty");
+        const dupWarning = dupBatch
+          ? `<div class="meta" style="color:var(--red)">⚠️ This exact file was already imported on ${escapeHtml(dupBatch.importedAt.slice(0, 10))} (${dupBatch.rowCount} rows) — importing again will duplicate rows unless you check Replace below.</div>`
+          : "";
         return `<div class="list-row bulk-row" data-bulk-index="${i}">
           <div style="flex:1;min-width:0">
             <div>${escapeHtml(r.name)}${r.sheetName ? ` <span class="meta">(${escapeHtml(r.sheetName)})</span>` : ""}</div>
             <div class="meta">${r.rows.length} rows · ${money(total)}</div>
+            ${dupWarning}
             ${existing.length ? `<label class="field checkbox tiny" style="margin:0.35rem 0 0"><input type="checkbox" class="bulk-replace" data-idx="${i}" /><span>Replace ${existing.length} existing rows for this platform</span></label>` : ""}
           </div>
           <select class="bulk-platform" data-idx="${i}" style="width:auto">${platformOptions(r.platformId)}</select>
@@ -1505,7 +1525,7 @@
         const chk = document.querySelector(`.bulk-replace[data-idx="${i}"]`);
         const platformId = sel ? sel.value : r.platformId;
         const replace = chk ? chk.checked : false;
-        const res = commitImportRows(r.rows, platformId, { fileName: r.name, sheetName: r.sheetName, replace });
+        const res = commitImportRows(r.rows, platformId, { fileName: r.name, sheetName: r.sheetName, replace, fileHash: r.hash });
         filesImported++;
         rowsImported += res.rowCount;
         allRows.push(...r.rows);
@@ -1582,15 +1602,21 @@
 
     const replace = document.getElementById("import-replace")?.checked && !document.getElementById("import-replace-wrap")?.hidden;
     const total = result.rows.reduce((s, r) => s + (r.royalty || 0), 0);
-    const confirmMsg = replace
-      ? `Replace all existing ${D.PLATFORMS.find((p) => p.id === (result.platformId || platformId))?.name || platformId} data with these ${result.rows.length} rows totaling ${money(total)}?\n\nThis deletes the previously imported rows for this platform first.`
-      : `Import ${result.rows.length} rows totaling ${money(total)}?\n\nIf this doesn’t match your store dashboard, cancel and try another sheet/report.`;
+    const dupBatch = D.findImportBatchByHash(state, pendingImport.hash, "royalty");
+    const dupWarning = dupBatch
+      ? `\n\n⚠️ This exact file was already imported on ${dupBatch.importedAt.slice(0, 10)} (${dupBatch.rowCount} rows). Importing again will add duplicate rows${replace ? "" : " unless you check “Replace existing data” above"}.`
+      : "";
+    const confirmMsg =
+      (replace
+        ? `Replace all existing ${D.PLATFORMS.find((p) => p.id === (result.platformId || platformId))?.name || platformId} data with these ${result.rows.length} rows totaling ${money(total)}?\n\nThis deletes the previously imported rows for this platform first.`
+        : `Import ${result.rows.length} rows totaling ${money(total)}?\n\nIf this doesn’t match your store dashboard, cancel and try another sheet/report.`) + dupWarning;
     if (!confirm(confirmMsg)) return;
 
     commitImportRows(result.rows, result.platformId || platformId, {
       fileName: pendingImport.name,
       sheetName: sheetNameForBatch,
       replace,
+      fileHash: pendingImport.hash,
     });
 
     persist();
@@ -1636,8 +1662,12 @@
         pendingExpenseImport = null;
         return;
       }
-      pendingExpenseImport = { name: file.name, rows: result.rows, allHaveDates: result.allHaveDates };
+      pendingExpenseImport = { name: file.name, rows: result.rows, allHaveDates: result.allHaveDates, hash: payload.hash };
       renderExpenseImportPreview();
+      const dupBatch = D.findImportBatchByHash(state, payload.hash, "expense");
+      if (dupBatch && status) {
+        status.textContent = `⚠️ This exact file was already imported on ${dupBatch.importedAt.slice(0, 10)} (${dupBatch.rowCount} rows) — importing again will add duplicates.`;
+      }
     } catch (err) {
       const msg = String(err?.message || err);
       if (status) status.textContent = msg;
@@ -1728,6 +1758,15 @@
       return;
     }
 
+    const dupBatch = D.findImportBatchByHash(state, pendingExpenseImport.hash, "expense");
+    if (dupBatch) {
+      const ok = confirm(
+        `This exact file was already imported on ${dupBatch.importedAt.slice(0, 10)} (${dupBatch.rowCount} expenses). Import it again anyway? This will add duplicate expenses.`
+      );
+      if (!ok) return;
+    }
+
+    const batchId = D.uid("batch");
     let count = 0;
     let total = 0;
     trs.forEach((tr) => {
@@ -1748,6 +1787,7 @@
         note: item,
         bookId: null,
         recurring: false,
+        batchId,
       });
       count++;
       total += cost;
@@ -1757,6 +1797,18 @@
       toast("No valid rows to import — check the cost column.");
       return;
     }
+
+    D.addImportBatch(state, {
+      id: batchId,
+      platformId: null,
+      fileName: pendingExpenseImport.name,
+      fileHash: pendingExpenseImport.hash,
+      kind: "expense",
+      sheetName: null,
+      importedAt: new Date().toISOString(),
+      rowCount: count,
+      royaltyTotal: total,
+    });
 
     persist();
     pendingExpenseImport = null;
