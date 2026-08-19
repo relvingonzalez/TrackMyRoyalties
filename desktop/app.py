@@ -154,8 +154,7 @@ EXTERNAL_LINK_ALLOWED_HOSTS = {
     "myaccount.ingramspark.com",
     "writinglife.kobo.com",
     "press.barnesandnoble.com",
-    "apple.com",
-    "www.apple.com",
+    "authors.apple.com",
 }
 
 

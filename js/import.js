@@ -1313,25 +1313,44 @@
     };
   }
 
+  // Re-verified against each platform's own current help docs (August 2026). Confidence
+  // varies by platform — see each entry's `confidence`:
+  //  "verified"  — steps checked against the platform's own current documentation.
+  //  "likely"    — the portal/URL is confirmed current, but the platform redesigned its
+  //                dashboard recently and the exact in-page button wording couldn't be
+  //                independently confirmed; the navigation shape should still be right.
   const EXPORT_GUIDES = [
     {
       id: "kdp",
       title: "Amazon KDP",
       url: "https://kdpreports.amazon.com/orders",
       urlVerified: true,
-      body:
-        "kdpreports.amazon.com → Orders (left menu) → Choose a date → Lifetime → download (.xlsx). " +
-        "That file has several sheets: Combined Sales, per-format Royalty sheets (eBook/Paperback/Hardcover/Audiobook), KENP, Orders Processed, Summary, etc. TrackMyRoyalties detects this shape and combines the per-format Royalty + KENP sheets for you — you don't need to pick one or sum them yourself. " +
-        "Why KDP numbers often disagree: dashboard “estimated royalties” ≠ Orders export ≠ Prior Months’ Royalties (what actually gets paid) ≠ bank deposit. Free promos, refunds, marketplace currency, and KENP timing all differ. " +
-        "For cash actually paid, use Reports → Prior Months' Royalties instead; for unit/order history, use Orders (Lifetime).",
+      confidence: "verified",
+      steps: [
+        "Go to kdpreports.amazon.com and sign in",
+        "Click <strong>Orders</strong> in the left menu",
+        "Set the date range to <strong>Lifetime</strong>",
+        "Click <strong>Download</strong> to get the .xlsx file",
+      ],
+      note:
+        "That file has several sheets: Combined Sales, per-format Royalty sheets (eBook/Paperback/Hardcover/Audiobook), KENP, Orders Processed, Summary, etc. TrackMyRoyalties detects this shape and combines the per-format Royalty + KENP sheets for you — you don't need to pick one or sum them yourself.",
+      caveat:
+        "Why KDP numbers often disagree: dashboard “estimated royalties” ≠ Orders export ≠ Prior Months’ Royalties (what actually gets paid) ≠ bank deposit. Free promos, refunds, marketplace currency, and KENP timing all differ. For cash actually paid, use Reports → Prior Months' Royalties instead; for unit/order history, use Orders (Lifetime).",
     },
     {
       id: "kobo",
       title: "Kobo Writing Life",
       url: "https://writinglife.kobo.com/",
       urlVerified: true,
-      body:
-        "writinglife.kobo.com → My Account → Payment Information. This is where Kobo posts the official monthly sales reports (uploaded ~25th of each month, for the prior month) — download them individually or grab your whole history at once. " +
+      confidence: "verified",
+      steps: [
+        "Sign in at writinglife.kobo.com",
+        "Open the <strong>My Account</strong> menu",
+        "Click <strong>Payment Information</strong>",
+        "Download the monthly report(s) you need, or grab your whole history at once",
+      ],
+      note: "Kobo posts these official monthly sales reports around the 25th of each month, covering the prior month.",
+      caveat:
         "The Dashboard's own CSV export (under Book Titles) is a real-time estimate and leaves out some transaction types (promo codes, OverDrive library loans, Kobo Plus reads). For numbers that match what you're paid, use the Payment Information reports, not the dashboard export.",
     },
     {
@@ -1339,49 +1358,89 @@
       title: "Draft2Digital",
       url: "https://www.draft2digital.com/reports/raw_sales_data/",
       urlVerified: true,
-      body:
-        "draft2digital.com → Author Dashboard → My Reports → Raw Sales Data. Pick a reporting period (month) and download as CSV. D2D already aggregates Apple, B&N, Kobo, libraries, and more — tag rows as D2D here, and skip importing those same stores separately if you also distribute to them directly, or you'll double-count. " +
-        "Note the report's “Verified” column: unverified rows are early estimates D2D hasn't finalized yet.",
+      confidence: "verified",
+      steps: [
+        "Sign in at draft2digital.com",
+        "Go to <strong>My Reports</strong>",
+        "Choose <strong>Raw Sales Data</strong> (one combined report covering ebook, print, and audiobook)",
+        "Pick a reporting period (month)",
+        "Download as CSV",
+      ],
+      note:
+        "D2D already aggregates Apple, B&N, Kobo, libraries, and more into this one file — tag these rows as D2D, and skip importing those same stores separately if you also distribute to them directly, or you'll double-count.",
+      caveat: "Check the report's “Verified” column: unverified rows are early estimates D2D hasn't finalized yet.",
     },
     {
       id: "apple",
       title: "Apple Books",
-      url: "https://www.apple.com/itunes/go/itunesconnect/salesReports",
-      urlVerified: false, // sourced from Apple's own support docs, but not click-tested by anyone yet
-      body:
-        "authors.apple.com (App Store Connect) → Sales and Trends → filter by date range → download as a flat file. Reporting updates daily, but Apple pays out roughly 30–45 days after the month closes, so a very recent range will look smaller than what eventually settles. " +
-        "If you distribute to Apple Books through D2D or another aggregator instead of going direct, import their combined report and skip this one to avoid double-counting.",
+      url: "https://authors.apple.com",
+      urlVerified: false,
+      confidence: "likely",
+      steps: [
+        "Sign in at authors.apple.com — this is <strong>Apple Books for Authors</strong>, the current self-publish portal (not the old “iTunes Connect” some guides still mention)",
+        "Open your sales/analytics section",
+        "Filter by the date range you want",
+        "Download the report as a flat file",
+      ],
+      note:
+        "Reporting updates about a day behind, but Apple pays out roughly 30–45 days after the month closes, so a very recent range will look smaller than what eventually settles.",
+      caveat:
+        "Not fully click-verified: Apple's own docs still mix old “iTunes Connect” terminology in with the newer authors.apple.com portal, so the exact in-page menu wording above may not match precisely — the URL and overall path are current, though. If you distribute to Apple Books through D2D or another aggregator instead of going direct, import their combined report and skip this one to avoid double-counting.",
     },
     {
       id: "bn",
       title: "Barnes & Noble Press",
       url: "https://press.barnesandnoble.com/",
       urlVerified: true,
-      body:
-        "press.barnesandnoble.com → Sales Reporting → pick a report type (Sales by Month, Sales by Year, Custom Date, etc.) → Export Excel Sheet at the top of the results page. Monthly reports look like: preamble “Sales by Month - 2024”, then columns Month / Units Sold / Total Royalty. TrackMyRoyalties maps December → 2024-12-01 and skips $0 months. Set platform to B&N Press. Skip if B&N is only via Draft2Digital.",
+      confidence: "likely",
+      steps: [
+        "Sign in at press.barnesandnoble.com",
+        "Go to <strong>Sales Reporting</strong>",
+        "Pick a report type (Sales by Month, Sales by Year, Custom Date, etc.)",
+        "Look for the export/download option near the top of the results table",
+      ],
+      note:
+        "Monthly reports look like: a header row (“Sales by Month - 2026”), then columns Month / Units Sold / Total Royalty. TrackMyRoyalties maps “December” → 2026-12-01 and skips $0 months. Set platform to B&N Press when importing.",
+      caveat:
+        "B&N Press redesigned this dashboard recently, so the exact export button wording may not match what's above — if you don't see it where described, look for a download/export icon near the report results. Skip this entirely if B&N is only ever routed through Draft2Digital.",
     },
     {
       id: "google",
       title: "Google Play Books",
       url: "https://play.google.com/books/publish/",
       urlVerified: true,
-      body:
-        "play.google.com/books/publish/ → Reports (left menu). For the number that matches what you're actually paid, open the Google Play earnings reports section and click Download next to your payment profile. For an itemized, filterable CSV (by date/title/country), use the sales report section instead and click Export report.",
+      confidence: "verified",
+      steps: [
+        "Sign in at play.google.com/books/publish",
+        "Click <strong>Reports</strong> in the left menu",
+        "Choose <strong>Sales transactions</strong> or <strong>Sales summary</strong> for itemized, per-row data",
+        "Set your date range and filters",
+        "Click <strong>Export report</strong> to download a tab-separated file",
+      ],
+      note:
+        "For the number that matches what you're actually paid instead, open the separate Google Play earnings reports section and click Download next to your payment profile — but that one's a payout summary, not row-level sales data, so it isn't what you import here.",
     },
     {
       id: "ingram",
       title: "IngramSpark",
       url: "https://myaccount.ingramspark.com/",
       urlVerified: true,
-      body:
-        "ingramspark.com → Reports → Sales → Ebook Sales / Print Sales (separately — they can't be combined into one export). Set a date range and pick Excel as the output format; this is the report built for dated history. " +
-        "Reports → Compensation is a different report — it only shows one lump total per title for whichever period you pick, with no per-row date, so it can't be imported here even though it's the one most tax-season guides point you to. " +
-        "Ingram pays on roughly a 90-day delay, so a given period's compensation reflects sales from about 3 months earlier.",
+      confidence: "verified",
+      steps: [
+        "Sign in at myaccount.ingramspark.com",
+        "Click <strong>Reports</strong> in the left menu",
+        "Choose <strong>Ebook Sales</strong> or <strong>Print Sales</strong> (export them separately — they can't be combined into one file)",
+        "Set your date range",
+        "Choose Excel / Tab-delimited as the output format and download",
+      ],
+      note: "This is the report built for dated, per-row history.",
+      caveat:
+        "Reports → Compensation is a different report — it only shows one lump total per title for whichever period you pick, with no per-row date, so it can't be imported here even though it's the one most tax-season guides point you to. Ingram also pays on roughly a 90-day delay, so a given period's compensation reflects sales from about 3 months earlier.",
     },
     {
       id: "trackmyroyalties",
       title: "TrackMyRoyalties format (best)",
-      body: "Columns: date, platform, title, royalty, units, kenp. Example: 2026-03-01,kdp,Ember Protocol,12.40,4,0",
+      note: "Columns: date, platform, title, royalty, units, kenp. Example: 2026-03-01,kdp,Ember Protocol,12.40,4,0",
     },
   ];
 

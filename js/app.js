@@ -980,7 +980,21 @@
         : "";
       const wordmark = PIcons.wordmarkSrc(g.id);
       const logo = wordmark ? `<img class="guide-wordmark" src="${wordmark}" alt="${g.title}" />` : "";
-      return `<details><summary>${g.title}</summary>${logo}<p>${g.body}</p>${linkBtn}</details>`;
+
+      const stepsHtml =
+        g.steps && g.steps.length
+          ? `<ol class="guide-steps">${g.steps.map((s) => `<li>${s}</li>`).join("")}</ol>`
+          : "";
+      const noteHtml = g.note ? `<p class="guide-note">${g.note}</p>` : "";
+      const caveatHtml = g.caveat
+        ? `<p class="guide-caveat"><strong>Heads up:</strong> ${g.caveat}</p>`
+        : "";
+      const confidenceHtml =
+        g.confidence === "likely"
+          ? `<p class="guide-confidence">⚠️ This platform changed its dashboard recently — steps below are the right general path, but an exact button label may have shifted. See the note below if something doesn't match.</p>`
+          : "";
+
+      return `<details><summary>${g.title}</summary>${logo}${confidenceHtml}${stepsHtml}${noteHtml}${caveatHtml}${linkBtn}</details>`;
     }).join("");
     $$(".export-guide-link", $("#export-guides")).forEach((btn) => {
       btn.addEventListener("click", (e) => {
