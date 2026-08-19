@@ -938,7 +938,7 @@
 
     Charts.renderExpenseChart("chart-expenses", agg.byCategory, D.EXPENSE_CATEGORIES, money);
 
-    const list = [...agg.expenses].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 20);
+    const list = [...agg.expenses].sort((a, b) => b.date.localeCompare(a.date));
     $("#expense-list").innerHTML =
       list
         .map((e) => {
@@ -951,9 +951,31 @@
               <div class="meta">${e.date} · ${escapeHtml(e.note || "")}${platTag}</div>
             </div>
             <div class="amount neg">−${money(e.amount)}</div>
+            <div class="row-actions">
+              <button type="button" class="btn ghost sm expense-edit-btn" data-expense-id="${e.id}">Edit</button>
+              <button type="button" class="btn ghost sm expense-remove-btn" data-expense-id="${e.id}">Remove</button>
+            </div>
           </div>`;
         })
         .join("") || `<p class="muted">No expenses in range.</p>`;
+
+    $$(".expense-edit-btn", $("#expense-list")).forEach((btn) => {
+      btn.addEventListener("click", () => openExpenseModal(btn.dataset.expenseId));
+    });
+    $$(".expense-remove-btn", $("#expense-list")).forEach((btn) => {
+      btn.addEventListener("click", () => removeExpense(btn.dataset.expenseId));
+    });
+  }
+
+  function removeExpense(id) {
+    const expense = state.expenses.find((e) => e.id === id);
+    if (!expense) return;
+    const cat = D.EXPENSE_CATEGORIES.find((c) => c.id === expense.categoryId);
+    if (!confirm(`Remove this ${cat?.name || expense.categoryId} expense of ${money(expense.amount)} from ${expense.date}? This can't be undone.`)) return;
+    state.expenses = state.expenses.filter((e) => e.id !== id);
+    persist();
+    toast("Expense removed");
+    renderExpenses();
   }
 
   // ---------- Import ----------
@@ -1998,19 +2020,22 @@
     $("#modal-root").classList.add("hidden");
   }
 
-  function openExpenseModal() {
-    const cats = D.EXPENSE_CATEGORIES.map((c) => `<option value="${c.id}">${c.name}</option>`).join("");
+  function openExpenseModal(editId) {
+    const existing = editId ? state.expenses.find((e) => e.id === editId) : null;
+    const cats = D.EXPENSE_CATEGORIES.map(
+      (c) => `<option value="${c.id}" ${existing?.categoryId === c.id ? "selected" : ""}>${c.name}</option>`
+    ).join("");
     const platOptions =
       `<option value="">— General (not tied to one platform) —</option>` +
-      D.PLATFORMS.map((p) => `<option value="${p.id}">${p.name}</option>`).join("");
+      D.PLATFORMS.map((p) => `<option value="${p.id}" ${existing?.platformId === p.id ? "selected" : ""}>${p.name}</option>`).join("");
     openModal(
-      "Add expense",
+      existing ? "Edit expense" : "Add expense",
       `<form id="expense-form" class="form-grid" style="grid-template-columns:1fr">
-        <label class="field"><span>Date</span><input type="date" name="date" required value="${new Date().toISOString().slice(0, 10)}" /></label>
+        <label class="field"><span>Date</span><input type="date" name="date" required value="${existing?.date || new Date().toISOString().slice(0, 10)}" /></label>
         <label class="field"><span>Category</span><select name="categoryId">${cats}</select></label>
         <label class="field"><span>Platform</span><select name="platformId">${platOptions}</select></label>
-        <label class="field"><span>Amount (USD)</span><input type="number" name="amount" step="0.01" min="0" required /></label>
-        <label class="field"><span>Note</span><input type="text" name="note" placeholder="e.g. AMS Ember Protocol" /></label>
+        <label class="field"><span>Amount (USD)</span><input type="number" name="amount" step="0.01" min="0" required value="${existing?.amount ?? ""}" /></label>
+        <label class="field"><span>Note</span><input type="text" name="note" placeholder="e.g. AMS Ember Protocol" value="${escapeHtml(existing?.note || "")}" /></label>
       </form>`,
       `<button type="button" class="btn ghost" data-close>Cancel</button>
        <button type="button" class="btn primary" id="expense-save">Save</button>`
@@ -2020,19 +2045,26 @@
       const fd = new FormData(form);
       const amount = parseFloat(fd.get("amount"));
       if (!amount) return toast("Enter an amount");
-      state.expenses.push({
-        id: D.uid("e"),
+      const fields = {
         date: fd.get("date"),
         categoryId: fd.get("categoryId"),
         platformId: fd.get("platformId") || null,
         amount,
         note: fd.get("note") || "",
-        bookId: null,
-        recurring: false,
-      });
+      };
+      if (existing) {
+        Object.assign(existing, fields);
+      } else {
+        state.expenses.push({
+          id: D.uid("e"),
+          ...fields,
+          bookId: null,
+          recurring: false,
+        });
+      }
       persist();
       closeModal();
-      toast("Expense added");
+      toast(existing ? "Expense updated" : "Expense added");
       renderExpenses();
     };
     $$("[data-close]").forEach((b) => (b.onclick = closeModal));
@@ -2169,7 +2201,7 @@
     $("#range-to")?.addEventListener("change", () => renderPage(currentPage));
     $("#platform-select")?.addEventListener("change", () => renderPage(currentPage));
 
-    $("#add-expense-btn")?.addEventListener("click", openExpenseModal);
+    $("#add-expense-btn")?.addEventListener("click", () => openExpenseModal());
     $("#goto-expense-import-btn")?.addEventListener("click", () => {
       navigate("import");
       const section = document.getElementById("expense-dropzone")?.closest("section.panel");
