@@ -231,6 +231,10 @@ a { color: var(--gold); }
   margin: 0 0 1.5rem;
 }
 
+.landing-support {
+  margin: 3rem 0 1rem;
+}
+
 .cards-3 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -327,27 +331,6 @@ a { color: var(--gold); }
 }
 
 .sidebar-foot { margin-top: auto; }
-
-.premium-badge {
-  display: inline-flex;
-  padding: 0.3rem 0.7rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  margin-bottom: 0.4rem;
-}
-
-.premium-badge.free {
-  background: var(--bg-hover);
-  color: var(--text-muted);
-}
-
-.premium-badge.pro {
-  background: var(--gold-soft);
-  color: var(--gold);
-}
 
 .main {
   min-width: 0;
@@ -1021,73 +1004,6 @@ input:focus, select:focus, textarea:focus {
   align-items: end;
 }
 
-/* Premium */
-.premium-hero {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 2rem;
-  align-items: start;
-}
-
-.premium-hero h2 {
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: 1.9rem;
-  margin: 0.4rem 0 0.85rem;
-}
-
-.price {
-  color: var(--gold);
-  font-weight: 600;
-}
-
-.check-list {
-  list-style: none;
-  padding: 0;
-  margin: 1.25rem 0 1.5rem;
-}
-
-.check-list li {
-  padding: 0.4rem 0 0.4rem 1.6rem;
-  position: relative;
-  color: var(--text-muted);
-}
-
-.check-list li::before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: var(--green);
-  font-weight: 700;
-}
-
-.premium-compare h3 {
-  margin: 0 0 0.75rem;
-  font-size: 0.95rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.premium-lock.locked {
-  position: relative;
-}
-
-.premium-lock.locked::after {
-  content: "Premium — activate a signed license for full tax breakdown";
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: rgba(12, 16, 21, 0.72);
-  backdrop-filter: blur(4px);
-  border-radius: var(--radius);
-  font-weight: 600;
-  color: var(--gold);
-  text-align: center;
-  padding: 1rem;
-}
-
 .status-ok {
   color: var(--green);
   margin: 0.5rem 0;
@@ -1198,8 +1114,7 @@ code {
 /* Responsive */
 @media (max-width: 960px) {
   .grid-2,
-  .import-grid,
-  .premium-hero {
+  .import-grid {
     grid-template-columns: 1fr;
   }
 

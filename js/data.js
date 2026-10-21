@@ -6,16 +6,16 @@
   const LEGACY_STORAGE_KEY = "wideledger.v1"; // pre-rebrand key — read once, then migrated off
 
   const PLATFORMS = [
-    { id: "kdp", name: "Amazon KDP", short: "KDP", color: "#FF9900", free: true },
-    { id: "kobo", name: "Kobo Writing Life", short: "Kobo", color: "#BF1E2E", free: true },
-    { id: "d2d", name: "Draft2Digital", short: "D2D", color: "#2B6CB0", free: false },
-    { id: "apple", name: "Apple Books", short: "Apple", color: "#A2AAAD", free: false },
-    { id: "bn", name: "B&N Press", short: "B&N", color: "#3467B0", free: false },
-    { id: "google", name: "Google Play Books", short: "Google", color: "#34A853", free: false },
-    { id: "ingram", name: "IngramSpark", short: "Ingram", color: "#5C2D91", free: false },
-    { id: "smashwords", name: "Smashwords", short: "SW", color: "#E85D04", free: false },
-    { id: "direct", name: "Direct / Shopify", short: "Direct", color: "#95BF47", free: false },
-    { id: "other", name: "Other", short: "Other", color: "#718096", free: false },
+    { id: "kdp", name: "Amazon KDP", short: "KDP", color: "#FF9900" },
+    { id: "kobo", name: "Kobo Writing Life", short: "Kobo", color: "#BF1E2E" },
+    { id: "d2d", name: "Draft2Digital", short: "D2D", color: "#2B6CB0" },
+    { id: "apple", name: "Apple Books", short: "Apple", color: "#A2AAAD" },
+    { id: "bn", name: "B&N Press", short: "B&N", color: "#3467B0" },
+    { id: "google", name: "Google Play Books", short: "Google", color: "#34A853" },
+    { id: "ingram", name: "IngramSpark", short: "Ingram", color: "#5C2D91" },
+    { id: "smashwords", name: "Smashwords", short: "SW", color: "#E85D04" },
+    { id: "direct", name: "Direct / Shopify", short: "Direct", color: "#95BF47" },
+    { id: "other", name: "Other", short: "Other", color: "#718096" },
   ];
 
   const EXPENSE_CATEGORIES = [
@@ -63,8 +63,6 @@
   function defaultState() {
     return {
       version: 1,
-      premium: false, // derived only after license verify — never trust alone
-      licenseKey: "",
       currency: "USD",
       showKenp: true,
       compactMode: false,
@@ -185,7 +183,7 @@
     localStorage.removeItem(PRE_DEMO_KEY);
   }
 
-  /** Empty catalog/sales but keep license + prefs */
+  /** Empty catalog/sales but keep prefs */
   function clearCatalogData(state) {
     return {
       ...state,
@@ -360,8 +358,6 @@
 
     return {
       version: 1,
-      premium: false,
-      licenseKey: "", // demo stays free until you apply a signed license
       currency: "USD",
       showKenp: true,
       compactMode: false,
@@ -560,21 +556,6 @@
     };
   }
 
-  function freePlatformLimit(state) {
-    return state.premium ? Infinity : 2;
-  }
-
-  function canUsePlatform(state, platformId) {
-    if (state.premium) return true;
-    const p = PLATFORMS.find((x) => x.id === platformId);
-    if (p?.free) return true;
-    // Count platforms that already have data
-    const used = new Set(state.royalties.map((r) => r.platformId));
-    if (used.has(platformId)) return true;
-    if (used.size < 2) return true;
-    return false;
-  }
-
   function currencySymbol(code) {
     return (
       {
@@ -675,8 +656,6 @@
     filterRoyalties,
     filterExpenses,
     aggregate,
-    freePlatformLimit,
-    canUsePlatform,
     formatMoney,
     formatInt,
     currencySymbol,

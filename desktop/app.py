@@ -3,8 +3,6 @@
 TrackMyRoyalties desktop shell (macOS / Windows / Linux via pywebview).
 
 - Serves the local web app (no internet required for app code)
-- Optional: auto-loads ~/.trackmyroyalties/license.key into the app after launch
-- Optional: TRACKMYROYALTIES_LICENSE env var with a full WL1.… key
 
 Run:
   cd ~/TrackMyRoyalties
@@ -32,13 +30,12 @@ APP_SLUG = "trackmyroyalties"
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_DIR = Path.home() / f".{APP_SLUG}"
-LICENSE_PATH = CONFIG_DIR / "license.key"
 STORAGE_DIR = CONFIG_DIR / "webview_data"
 HOST = "127.0.0.1"
 PORT = 8788
 
-# One-time migration from the pre-rebrand (WideLedger) config dir, so an existing license
-# file / persistent browser profile isn't silently orphaned by the rename.
+# One-time migration from the pre-rebrand (WideLedger) config dir, so the persistent
+# browser profile isn't silently orphaned by the rename.
 _LEGACY_CONFIG_DIR = Path.home() / ".wideledger"
 if _LEGACY_CONFIG_DIR.is_dir() and not CONFIG_DIR.exists():
     import shutil
@@ -126,23 +123,6 @@ def start_server():
     return server
 
 
-def read_owner_license() -> str | None:
-    env = os.environ.get(f"{APP_SLUG.upper()}_LICENSE", "").strip()
-    if env.startswith("WL1."):
-        return env
-    if LICENSE_PATH.is_file():
-        text = LICENSE_PATH.read_text(encoding="utf-8").strip().splitlines()[0].strip()
-        if text.startswith("WL1."):
-            return text
-    # Project-local owner license (developer convenience; keep out of public git)
-    local = ROOT / "tools" / "owner.license"
-    if local.is_file():
-        text = local.read_text(encoding="utf-8").strip().splitlines()[0].strip()
-        if text.startswith("WL1."):
-            return text
-    return None
-
-
 # Domains the "Go to report" deep links are allowed to open in the system browser.
 # Allowlisted rather than open-anything: this method is reachable from any JS running in
 # the embedded webview, so it shouldn't blindly shell out to whatever URL it's handed.
@@ -195,7 +175,6 @@ def main():
     # case the no-store header above is never seen because no request happens at all. A
     # genuinely new URL every launch forces a real fetch no matter what's already cached.
     url = f"http://{HOST}:{PORT}/index.html?boot={CACHE_BUST}"
-    license_key = read_owner_license()
 
     window = webview.create_window(
         APP_NAME,
@@ -208,46 +187,7 @@ def main():
         js_api=Api(),
     )
 
-    def on_loaded():
-        if not license_key:
-            return
-        # Inject signed license once if not already stored (avoid reload loops)
-        js = f"""
-        (async function() {{
-          const key = {license_key!r};
-          const tryApply = async (n) => {{
-            if (!window.WideLedgerLicense || !window.WideLedgerData) {{
-              if (n < 50) return setTimeout(() => tryApply(n+1), 100);
-              return;
-            }}
-            let state = WideLedgerData.loadState();
-            if (state.licenseKey === key) return;
-            const r = await WideLedgerLicense.verifyLicense(key);
-            if (!r.ok) {{
-              console.warn('WideLedger license file invalid:', r.error);
-              return;
-            }}
-            state.licenseKey = r.license;
-            state.firstVisit = false;
-            WideLedgerData.saveState(state);
-            location.reload();
-          }};
-          tryApply(0);
-        }})();
-        """
-        try:
-            window.evaluate_js(js)
-        except Exception as e:
-            print("Could not inject license:", e)
-
-    # pywebview 6: events
-    window.events.loaded += on_loaded
-
     print(f"{APP_NAME} desktop → {url}")
-    if license_key:
-        print(f"License source found (auto-unlock Premium).")
-    else:
-        print(f"No license file. Free mode. Add {LICENSE_PATH} or tools/owner.license")
 
     # BUG FIX: pywebview defaults to private_mode=True, which means the
     # WKWebView/Edge/GTK backend uses an ephemeral, in-memory data store —

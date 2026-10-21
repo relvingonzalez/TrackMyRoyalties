@@ -25,7 +25,6 @@
   <script src="js/brand.js" defer></script>
   <script src="js/data.js" defer></script>
   <script src="js/platform-icons.js" defer></script>
-  <script src="js/license.js" defer></script>
   <script src="js/import.js" defer></script>
   <script src="js/charts.js" defer></script>
   <script src="js/app.js" defer></script>
@@ -46,7 +45,7 @@
       </header>
 
       <div class="landing-hero">
-        <p class="eyebrow">Built for wide authors · Privacy-first · One-time unlock</p>
+        <p class="eyebrow">Built for wide authors · Privacy-first · Free</p>
         <h1>All your royalties.<br /><em>True profit.</em> One place.</h1>
         <p class="lede">
           Stop hopping between KDP, Kobo, D2D, Apple, IngramSpark, and B&amp;N.
@@ -57,7 +56,7 @@
           <button type="button" class="btn primary lg" data-action="load-demo">Explore with demo data</button>
           <button type="button" class="btn secondary lg" data-action="enter-app">Start empty</button>
         </div>
-        <p class="hero-note">Free forever for core tracking · Premium is a one-time $9.99 unlock · Your data stays on this device</p>
+        <p class="hero-note">Free, every feature · No account · Your data stays on this device</p>
       </div>
 
       <section class="pain-grid">
@@ -66,7 +65,7 @@
         <div class="cards-3">
           <article class="card">
             <h3>Subscription tax on success</h3>
-            <p>Competitors charge $10–$249/mo and often raise the tier as you earn more. TrackMyRoyalties: free core + <strong>one-time $9.99</strong> for everything else.</p>
+            <p>Competitors charge $10–$249/mo and often raise the tier as you earn more. TrackMyRoyalties is <strong>free</strong>, with every feature included.</p>
           </article>
           <article class="card">
             <h3>Income ≠ profit</h3>
@@ -86,7 +85,7 @@
           </article>
           <article class="card">
             <h3>Tax-season chaos</h3>
-            <p>Premium unlocks year summaries, CSV/JSON export, and clean totals for Schedule C / accountant handoff.</p>
+            <p>Year summaries, CSV/JSON export, and clean totals for Schedule C / accountant handoff.</p>
           </article>
         </div>
       </section>
@@ -95,6 +94,8 @@
         <h2>Platforms</h2>
         <div class="platform-pills" id="landing-platforms"></div>
       </section>
+
+      <p class="section-sub landing-support">Free and built by one person. If it saves you time, you can <a href="https://buymeacoffee.com/relvingonzalez" target="_blank" rel="noopener">buy me a coffee</a>.</p>
     </section>
 
     <!-- App shell -->
@@ -111,11 +112,9 @@
           <button type="button" class="nav-item" data-nav="expenses">Expenses</button>
           <button type="button" class="nav-item" data-nav="import">Import</button>
           <button type="button" class="nav-item" data-nav="tax">Tax &amp; export</button>
-          <button type="button" class="nav-item" data-nav="premium">Premium</button>
           <button type="button" class="nav-item" data-nav="settings">Settings</button>
         </nav>
         <div class="sidebar-foot">
-          <div id="premium-badge" class="premium-badge free">Free plan</div>
           <p class="muted tiny">Data stays on this device</p>
           <p class="muted tiny" id="build-stamp" style="opacity:0.5">build: unknown</p>
         </div>
@@ -335,7 +334,7 @@
               <span class="muted tiny">Free · one file for a new laptop or browser</span>
             </div>
             <p class="muted" style="margin-top:0">
-              Exports royalties, expenses, titles, platform links, and your license key (if any).
+              Exports royalties, expenses, titles, and platform links.
               Save to iCloud/Dropbox/USB, then restore on another device.
             </p>
             <div class="row gap wrap">
@@ -520,68 +519,9 @@
             </div>
           </div>
           <div id="tax-summary" class="kpi-grid"></div>
-          <div class="panel premium-lock" id="tax-detail-panel">
+          <div class="panel" id="tax-detail-panel">
             <div class="panel-head"><h2>Monthly breakdown</h2></div>
             <div id="tax-monthly" class="table-scroll"></div>
-          </div>
-        </div>
-
-        <!-- Premium -->
-        <div id="page-premium" class="page hidden">
-          <div class="page-head">
-            <div>
-              <h1>Premium</h1>
-              <p class="muted">One purchase. Locked until a signed license is activated.</p>
-            </div>
-          </div>
-          <div class="premium-hero panel">
-            <div>
-              <p class="eyebrow gold">Author-friendly pricing</p>
-              <h2>Unlock everything for <span class="price">$9.99</span> once</h2>
-              <p>Competitors charge $10–$29+/month and often tier by income. TrackMyRoyalties stays free for core tracking; Premium is a one-time unlock via a <strong>cryptographically signed license</strong>.</p>
-              <ul class="check-list">
-                <li>Unlimited platforms (free: 2)</li>
-                <li>Full history &amp; custom ranges beyond 12 months</li>
-                <li>Tax year breakdown + accountant exports</li>
-                <li>Series &amp; pen-name analytics (roadmap)</li>
-                <li>Period compare (roadmap)</li>
-              </ul>
-
-              <div id="premium-active" class="hidden">
-                <p class="status-ok"><strong>Premium active</strong></p>
-                <p class="muted tiny" id="premium-meta"></p>
-                <button type="button" class="btn ghost sm" id="deactivate-license">Remove license from this device</button>
-              </div>
-
-              <div id="premium-locked">
-                <label class="field" style="margin-top:1rem">
-                  <span>Paste license key (WL1.…)</span>
-                  <textarea id="license-input" rows="3" placeholder="WL1.eyJ…signature" style="resize:vertical;min-height:4.5rem"></textarea>
-                </label>
-                <div class="row gap wrap" style="margin-top:0.75rem">
-                  <button type="button" class="btn primary" id="activate-license">Activate license</button>
-                  <button type="button" class="btn secondary" id="buy-premium" title="Wire to Stripe / App Store later">Buy $9.99…</button>
-                </div>
-                <p class="muted tiny" id="premium-note" style="margin-top:0.75rem">
-                  Keys are ECDSA-signed. Only keys made with the private key on the seller machine work. Setting <code>premium: true</code> in storage does nothing.
-                </p>
-                <p class="muted tiny" id="license-error" style="color:var(--red)"></p>
-              </div>
-            </div>
-            <div class="premium-compare">
-              <h3>vs typical trackers</h3>
-              <table class="data-table compact">
-                <thead><tr><th></th><th>Others</th><th>TrackMyRoyalties</th></tr></thead>
-                <tbody>
-                  <tr><td>Pricing</td><td>$10–249/mo</td><td><strong>$0 + $9.99 once</strong></td></tr>
-                  <tr><td>Scales with income?</td><td>Often yes</td><td>Never</td></tr>
-                  <tr><td>Needs platform password?</td><td>Often</td><td>No</td></tr>
-                  <tr><td>Expenses &amp; ads</td><td>Mixed</td><td>Built-in</td></tr>
-                  <tr><td>Data location</td><td>Their cloud</td><td>Your device</td></tr>
-                  <tr><td>Accounts required?</td><td>Usually</td><td>No</td></tr>
-                </tbody>
-              </table>
-            </div>
           </div>
         </div>
 
@@ -624,7 +564,7 @@
                   Import vault
                   <input type="file" id="restore-backup" accept="application/json,.json" hidden />
                 </label>
-                <button type="button" class="btn secondary sm" id="btn-clear-demo-settings" title="Remove sample royalties/expenses; keeps license">Remove demo / clear sales data</button>
+                <button type="button" class="btn secondary sm" id="btn-clear-demo-settings" title="Remove sample royalties/expenses; keeps settings">Remove demo / clear sales data</button>
                 <button type="button" class="btn ghost sm" id="btn-load-demo-settings" data-action="load-demo">Load demo data</button>
                 <button type="button" class="btn danger sm" id="reset-data">Reset all data</button>
               </div>
@@ -635,10 +575,11 @@
             <h2>About &amp; roadmap</h2>
             <p><strong>TrackMyRoyalties MVP</strong> — local-first author P&amp;L for wide publishing.</p>
             <ul class="muted">
-              <li><strong>Now:</strong> CSV import, multi-platform P&amp;L, expenses, freemium unlock, PWA install.</li>
+              <li><strong>Now:</strong> CSV import, multi-platform P&amp;L, expenses, PWA install.</li>
               <li><strong>Next:</strong> Capacitor iOS/macOS wrapper for App Store, optional encrypted cloud sync, Amazon Ads CSV ROI matcher.</li>
               <li><strong>Not planned:</strong> Asking for KDP passwords or fragile full-account scraping as the primary model.</li>
             </ul>
+            <p class="muted">TrackMyRoyalties is free and built by one person. If it saves you time, you can <a href="https://buymeacoffee.com/relvingonzalez" target="_blank" rel="noopener">buy me a coffee</a>. Entirely optional.</p>
           </section>
         </div>
       </div>

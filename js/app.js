@@ -5,7 +5,6 @@
   const D = window.WideLedgerData;
   const Imp = window.WideLedgerImport;
   const Charts = window.WideLedgerCharts;
-  const Lic = window.WideLedgerLicense;
   const PIcons = window.WideLedgerPlatformIcons;
   const Brand = window.Brand;
 
@@ -13,8 +12,6 @@
   let pendingImport = null;
   let pendingExpenseImport = null;
   let currentPage = "dashboard";
-  let licenseMeta = null;
-  let premiumVerified = false; // only true after crypto verify
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -40,43 +37,12 @@
   }
 
   function persist() {
-    // Never persist a fake premium flag without a license key
-    state.premium = premiumVerified && !!state.licenseKey;
     D.saveState(state);
-  }
-
-  function isPremium() {
-    return premiumVerified === true;
-  }
-
-  async function refreshLicenseStatus() {
-    if (!Lic) {
-      premiumVerified = false;
-      licenseMeta = null;
-      state.premium = false;
-      return;
-    }
-    const result = await Lic.resolvePremium(state);
-    premiumVerified = result.premium;
-    licenseMeta = result.licenseMeta;
-    state.premium = result.premium;
-    if (!result.premium && state.licenseKey) {
-      // Stale / tampered key — clear flag but keep key visible for debugging
-      state.premium = false;
-    }
-    D.saveState(state);
-  }
-
-  function enforceRangeForFree(range) {
-    if (isPremium()) return range;
-    if (range === "all" || range === "custom") return "12m";
-    return range;
   }
 
   function exportVault() {
     const vault = {
       ...state,
-      premium: isPremium(),
       [`_${Brand.slug}`]: {
         format: `${Brand.slug}-vault`,
         version: 1,
@@ -86,7 +52,7 @@
     downloadBlob(JSON.stringify(vault, null, 2), `${Brand.slug}-vault-${Date.now()}.json`, "application/json");
     toast("Vault exported — save this file to move devices.");
     const st = $("#vault-status");
-    if (st) st.textContent = "Vault downloaded. Keep it private if it includes your license key.";
+    if (st) st.textContent = "Vault downloaded. Keep it private: it holds your sales data.";
   }
 
   async function importVaultFile(file) {
@@ -99,7 +65,7 @@
       toast("Not a valid JSON vault.");
       return;
     }
-    if (!data || (data.royalties == null && data.books == null && !data.licenseKey)) {
+    if (!data || (data.royalties == null && data.books == null)) {
       toast(`File does not look like a ${Brand.name} vault.`);
       return;
     }
@@ -108,11 +74,10 @@
     delete state._wideledger; // pre-rebrand export marker, harmless if present
     delete state[`_${Brand.slug}`];
     state.isDemo = !!data.isDemo;
-    await refreshLicenseStatus();
     persist();
-    toast(isPremium() ? "Vault restored · Premium license verified" : "Vault restored · Free plan");
+    toast("Vault restored");
     const st = $("#vault-status");
-    if (st) st.textContent = isPremium() ? "Restored with valid Premium license." : "Restored (free or invalid license).";
+    if (st) st.textContent = "Restored.";
     refreshAll();
   }
 
@@ -152,25 +117,19 @@
       restoreBtn.hidden = !(onDemo && snap);
     }
 
-    // Premium users: hide top-bar Demo (still available under Settings)
-    if (topDemo) {
-      topDemo.classList.toggle("hidden", isPremium() && !onDemo);
-      if (onDemo) topDemo.classList.add("hidden"); // while on demo, use banner instead
-    }
+    // While on demo, use the banner instead
+    topDemo?.classList.toggle("hidden", onDemo);
 
     if (settingsHint) {
       if (onDemo) {
-        settingsHint.textContent = "Demo data is loaded. Use “Remove demo / clear sales data” or the banner to get back to a blank (or previous) workspace. License is kept.";
+        settingsHint.textContent = "Demo data is loaded. Use “Remove demo / clear sales data” or the banner to get back to a blank (or previous) workspace.";
       } else if (snap) {
         settingsHint.textContent = "A snapshot of data from before the last demo load is still available until you clear it.";
       } else {
-        settingsHint.textContent = isPremium()
-          ? "Demo is optional for Premium. Prefer Import / vault for real royalties."
-          : "Demo is sample data only — remove it anytime before importing your CSVs.";
+        settingsHint.textContent = "Demo is sample data only — remove it anytime before importing your CSVs.";
       }
     }
 
-    // Settings: still allow reloading demo even when premium (explicit)
     if (settingsDemo) {
       settingsDemo.classList.toggle("hidden", onDemo);
     }
@@ -190,30 +149,22 @@
 
     if (hasReal) {
       const ok = confirm(
-        "Load demo data?\n\nYour current royalties/expenses will be saved as a snapshot so you can restore them.\nYour Premium license is always kept."
+        "Load demo data?\n\nYour current royalties/expenses will be saved as a snapshot so you can restore them."
       );
       if (!ok) return;
       D.snapshotBeforeDemo(state);
-    } else if (isPremium()) {
-      const ok = confirm(
-        "Load sample demo data?\n\nYou can remove it anytime from the yellow banner (license stays active)."
-      );
-      if (!ok) return;
     }
 
-    const keepLicense = state.licenseKey || "";
     const keepCurrency = state.currency;
     const keepShowKenp = state.showKenp;
     const keepCompact = state.compactMode;
 
     state = D.generateDemoData();
-    state.licenseKey = keepLicense;
     state.currency = keepCurrency;
     state.showKenp = keepShowKenp;
     state.compactMode = keepCompact;
     state.isDemo = true;
 
-    await refreshLicenseStatus();
     persist();
     showApp();
     updateDemoChrome();
@@ -231,15 +182,12 @@
     }
 
     const msg = state.isDemo
-      ? "Remove all demo royalties, expenses, and titles?\n\nYour Premium license and settings stay. You’ll get an empty workspace for real imports."
-      : "Clear all royalties, expenses, and titles on this device?\n\nLicense and settings stay. This cannot be undone unless you exported a vault.";
+      ? "Remove all demo royalties, expenses, and titles?\n\nYour settings stay. You’ll get an empty workspace for real imports."
+      : "Clear all royalties, expenses, and titles on this device?\n\nSettings stay. This cannot be undone unless you exported a vault.";
 
     if (!confirm(msg)) return;
 
-    const keepLicense = state.licenseKey || "";
     state = D.clearCatalogData(state);
-    state.licenseKey = keepLicense;
-    await refreshLicenseStatus();
     persist();
     updateDemoChrome();
     refreshAll();
@@ -252,21 +200,18 @@
       toast("No previous data snapshot found.");
       return;
     }
-    if (!confirm("Restore the data you had before loading demo?\n\nCurrent demo numbers will be discarded. License is kept.")) {
+    if (!confirm("Restore the data you had before loading demo?\n\nCurrent demo numbers will be discarded.")) {
       return;
     }
 
-    const keepLicense = state.licenseKey || "";
     state = {
       ...D.defaultState(),
       ...state,
       ...snap.state,
-      licenseKey: keepLicense,
       isDemo: false,
       firstVisit: false,
     };
     D.clearPreDemoSnapshot();
-    await refreshLicenseStatus();
     persist();
     updateDemoChrome();
     refreshAll();
@@ -291,14 +236,11 @@
     if (page === "expenses") renderExpenses();
     if (page === "import") renderImport();
     if (page === "tax") renderTax();
-    if (page === "premium") renderPremium();
     if (page === "settings") renderSettings();
   }
 
   async function refreshAll() {
-    await refreshLicenseStatus();
     fillPlatformSelects();
-    updatePremiumBadge();
     updateDemoChrome();
     renderPage(currentPage);
   }
@@ -323,22 +265,9 @@
     }
   }
 
-  function updatePremiumBadge() {
-    const badge = $("#premium-badge");
-    if (!badge) return;
-    if (isPremium()) {
-      badge.textContent = "Premium";
-      badge.className = "premium-badge pro";
-    } else {
-      badge.textContent = "Free plan";
-      badge.className = "premium-badge free";
-    }
-  }
-
   // ---------- Dashboard ----------
   function renderDashboard() {
-    let filters = getFilters();
-    filters.range = enforceRangeForFree(filters.range);
+    const filters = getFilters();
     const agg = D.aggregate(state, filters);
     const prevFilters = { ...filters };
     // rough previous period for delta: same length shifted
@@ -419,7 +348,7 @@
 
     const platObj = filters.platformId === "all" ? null : D.PLATFORMS.find((p) => p.id === filters.platformId);
     const platLabel = platObj ? platObj.name : "all platforms";
-    $("#dashboard-subtitle").textContent = `${platLabel} · ${filters.range}${isPremium() ? "" : " (free: max 12 months)"}`;
+    $("#dashboard-subtitle").textContent = `${platLabel} · ${filters.range}`;
 
     const logoEl = $("#dashboard-platform-logo");
     if (platObj) {
@@ -557,12 +486,6 @@
       );
     }
 
-    if (!isPremium() && Object.keys(agg.byPlatform).length >= 2) {
-      tips.push(
-        `Free plan includes 2 platforms fully. <strong>Premium ($9.99 once)</strong> unlocks unlimited stores, full history, and tax export — no income-based subscription.`
-      );
-    }
-
     if (filters.platformId === "all" && platEntries.length > 3) {
       tips.push(`You're wide across <strong>${platEntries.length} stores</strong>. Use the platform filter to avoid double-counting if D2D + direct overlap.`);
     }
@@ -616,13 +539,11 @@
   // ---------- Platforms ----------
   function renderPlatforms() {
     const filters = getFilters();
-    filters.range = enforceRangeForFree(filters.range);
     const agg = D.aggregate(state, { ...filters, platformId: "all" });
 
     $("#platform-cards").innerHTML = D.PLATFORMS.map((p) => {
       const stats = agg.byPlatform[p.id] || { royalty: 0, units: 0, kenp: 0, spend: 0, net: 0 };
       const conn = state.connectedPlatforms[p.id];
-      const locked = !isPremium() && !p.free && !state.royalties.some((r) => r.platformId === p.id);
       const selected = filters.platformId === p.id;
       const icon = PIcons.iconMarkup(p.id);
       const iconInner = icon.type === "svg" ? icon.markup : `<img src="${icon.src}" alt="${p.name}" />`;
@@ -632,7 +553,7 @@
             <div class="pc-icon${icon.tight ? " tight" : ""}" style="color:${p.color}">${iconInner}</div>
             <div>
               <h3>${p.name}</h3>
-              <div class="meta muted tiny">${p.free || isPremium() ? "Available" : locked ? "Premium for new imports" : "In use"}</div>
+              <div class="meta muted tiny">${state.royalties.some((r) => r.platformId === p.id) ? "In use" : "Available"}</div>
             </div>
           </div>
           <div class="stats">
@@ -689,7 +610,6 @@
   // ---------- Books ----------
   function renderBooks() {
     const filters = getFilters();
-    filters.range = enforceRangeForFree(filters.range);
     const agg = D.aggregate(state, filters);
     const byBook = Object.values(agg.byBook).sort((a, b) => b.royalty - a.royalty);
 
@@ -910,7 +830,6 @@
   // ---------- Expenses ----------
   function renderExpenses() {
     const filters = getFilters();
-    filters.range = enforceRangeForFree(filters.range);
     const agg = D.aggregate(state, filters);
 
     const ads = Object.entries(agg.byCategory)
@@ -1577,13 +1496,10 @@
     const earliestDate = new Date(earliest + "T12:00:00");
     if (earliestDate >= bounds.start) return ""; // already in view, leave the user's chosen range alone
 
-    const target = isPremium() ? "all" : "12m";
-    if (sel.value === target) return "";
-    sel.value = target;
+    if (sel.value === "all") return "";
+    sel.value = "all";
     $("#custom-range")?.classList.add("hidden");
-    return isPremium()
-      ? ` Switched the date range to "All time" so you can see it.`
-      : ` Switched the date range to "Last 12 months" so you can see it — full history is a Premium feature.`;
+    return ` Switched the date range to "All time" so you can see it.`;
   }
 
   function runImport() {
@@ -1592,16 +1508,6 @@
     const smart = pendingImport.kdpSmart;
     const smartActive = !!smart && getImportMode() === "smart";
     const platformId = smartActive ? "kdp" : document.getElementById("import-platform")?.value;
-
-    if (!isPremium()) {
-      const freeIds = D.PLATFORMS.filter((p) => p.free).map((p) => p.id);
-      const used = new Set(state.royalties.map((r) => r.platformId));
-      if (!freeIds.includes(platformId) && !used.has(platformId) && used.size >= 2) {
-        toast("Free plan: 2 platforms. Unlock Premium for unlimited stores.");
-        navigate("premium");
-        return;
-      }
-    }
 
     let result;
     let sheetNameForBatch;
@@ -1898,15 +1804,9 @@
     </tbody></table>`;
 
     $("#tax-monthly").innerHTML = table;
-    panel.classList.toggle("locked", !isPremium());
   }
 
   function exportCSV() {
-    if (!isPremium()) {
-      toast("CSV export is a Premium feature ($9.99 once).");
-      navigate("premium");
-      return;
-    }
     const lines = ["date,platform,title,type,royalty,units,kenp"];
     state.royalties.forEach((r) => {
       lines.push(
@@ -1923,82 +1823,8 @@
   }
 
   function exportJSON() {
-    if (!isPremium()) {
-      toast("JSON export is a Premium feature ($9.99 once).");
-      navigate("premium");
-      return;
-    }
     downloadBlob(JSON.stringify(state, null, 2), `${Brand.slug}-backup-${Date.now()}.json`, "application/json");
     toast("JSON backup downloaded.");
-  }
-
-  // ---------- Premium ----------
-  function renderPremium() {
-    const active = $("#premium-active");
-    const locked = $("#premium-locked");
-    const err = $("#license-error");
-    if (err) err.textContent = "";
-
-    if (isPremium()) {
-      active?.classList.remove("hidden");
-      locked?.classList.add("hidden");
-      const exp = licenseMeta?.exp
-        ? new Date(licenseMeta.exp * 1000).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
-        : "—";
-      if ($("#premium-meta")) {
-        $("#premium-meta").textContent = `Licensed to: ${licenseMeta?.sub || "—"} · Expires: ${exp} · ID: ${licenseMeta?.jti || "—"}`;
-      }
-    } else {
-      active?.classList.add("hidden");
-      locked?.classList.remove("hidden");
-    }
-  }
-
-  async function activateLicenseFromInput() {
-    const raw = $("#license-input")?.value || "";
-    const err = $("#license-error");
-    if (err) err.textContent = "";
-    if (!Lic) {
-      if (err) err.textContent = "License module not loaded.";
-      return;
-    }
-    const result = await Lic.verifyLicense(raw);
-    if (!result.ok) {
-      if (err) err.textContent = result.error;
-      toast(result.error);
-      return;
-    }
-    state.licenseKey = result.license;
-    await refreshLicenseStatus();
-    persist();
-    updatePremiumBadge();
-    renderPremium();
-    toast("Premium activated — signed license verified.");
-  }
-
-  async function deactivateLicense() {
-    if (!confirm("Remove the license from this device? (You can paste it again later.)")) return;
-    state.licenseKey = "";
-    premiumVerified = false;
-    licenseMeta = null;
-    state.premium = false;
-    persist();
-    updatePremiumBadge();
-    renderPremium();
-    toast("License removed. Back to Free plan.");
-  }
-
-  function buyPremiumPlaceholder() {
-    openModal(
-      "Buy Premium ($9.99)",
-      `<p>In production this opens <strong>Stripe Checkout</strong> or the <strong>App Store</strong>, then emails a signed <code>WL1.…</code> license.</p>
-       <p class="muted">For now (local testing): mint a key with your private key:</p>
-       <pre style="background:var(--bg-elevated);padding:0.75rem;border-radius:8px;overflow:auto;font-size:0.8rem">cd ~/${Brand.name}
-.venv/bin/python tools/generate_license.py --name "Customer" --perpetual</pre>
-       <p class="muted">Your owner key is already in <code>~/.${Brand.slug}/license.key</code> for the desktop app.</p>`,
-      `<button type="button" class="btn primary" data-close>Got it</button>`
-    );
-    $$("[data-close]").forEach((b) => (b.onclick = closeModal));
   }
 
   // ---------- Settings ----------
@@ -2189,11 +2015,7 @@
 
     $("#range-select")?.addEventListener("change", () => {
       const v = $("#range-select").value;
-      if (!isPremium() && (v === "all" || v === "custom")) {
-        toast("Full history & custom ranges are Premium. Showing last 12 months.");
-        $("#range-select").value = "12m";
-      }
-      $("#custom-range").classList.toggle("hidden", $("#range-select").value !== "custom");
+      $("#custom-range").classList.toggle("hidden", v !== "custom");
       renderPage(currentPage);
     });
 
@@ -2379,15 +2201,6 @@
       e.preventDefault();
       const fd = new FormData(e.target);
       const platformId = fd.get("platform");
-      if (!isPremium()) {
-        const used = new Set(state.royalties.map((r) => r.platformId));
-        const freeIds = D.PLATFORMS.filter((p) => p.free).map((p) => p.id);
-        if (!freeIds.includes(platformId) && !used.has(platformId) && used.size >= 2) {
-          toast("Free plan: 2 platforms. Unlock Premium for more.");
-          navigate("premium");
-          return;
-        }
-      }
       const title = String(fd.get("title") || "Manual entry");
       let book = state.books.find((b) => b.title.toLowerCase() === title.toLowerCase());
       if (!book && title !== "Manual entry") {
@@ -2422,9 +2235,6 @@
     $("#tax-year")?.addEventListener("change", renderTax);
     $("#export-csv")?.addEventListener("click", exportCSV);
     $("#export-json")?.addEventListener("click", exportJSON);
-    $("#activate-license")?.addEventListener("click", activateLicenseFromInput);
-    $("#deactivate-license")?.addEventListener("click", deactivateLicense);
-    $("#buy-premium")?.addEventListener("click", buyPremiumPlaceholder);
 
     $("#vault-export")?.addEventListener("click", exportVault);
     $("#vault-import")?.addEventListener("change", (e) => {
@@ -2457,8 +2267,6 @@
       if (confirm(`Delete all local ${Brand.name} data on this device?`)) {
         state = D.defaultState();
         state.firstVisit = false;
-        premiumVerified = false;
-        licenseMeta = null;
         persist();
         toast("Data cleared");
         await refreshAll();
@@ -2489,15 +2297,13 @@
   // app, which has no server able to inject a real build stamp the way the desktop app does
   // (see desktop/app.py's compute_build_stamp) — if the sidebar already shows a real stamp,
   // this leaves it alone rather than overwriting it with a less precise hardcoded value.
-  const CLIENT_BUILD_FALLBACK = "2026-08-10 (expense import + cache-bust fixes)";
+  const CLIENT_BUILD_FALLBACK = "2026-10-20 (free, no paywall)";
 
   async function boot() {
     renderLandingPlatforms();
     bindEvents();
     migrateDemoFlag();
-    await refreshLicenseStatus();
     fillPlatformSelects();
-    updatePremiumBadge();
     updateDemoChrome();
 
     const buildEl = document.getElementById("build-stamp");
