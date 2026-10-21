@@ -332,6 +332,16 @@ a { color: var(--gold); }
 
 .sidebar-foot { margin-top: auto; }
 
+.support-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.support-link:hover {
+  color: var(--text);
+}
+
 .main {
   min-width: 0;
   padding: 0 0 3rem;
