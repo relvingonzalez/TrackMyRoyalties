@@ -58,7 +58,167 @@
     return d;
   }
 
-  const PRE_DEMO_KEY = `${global.Brand.slug}.preDemo.v1`; // low-stakes transient snapshot, no migration needed
+  const PRE_DEMO_KEY = `${global.Brand.slug}.preDemo.v1`; // low-stakes transient snapshot
+
+  // ---------- Storage (IndexedDB) ----------
+  // Everything lives in one IndexedDB key/value store instead of localStorage: localStorage
+  // caps out around 5–10 MB per origin, which a power user with years of daily KDP rows plus
+  // several other platforms can hit, and every write there is a blocking JSON.stringify of the
+  // whole state. IndexedDB quota is a large share of free disk, and values are stored via
+  // structured clone (no JSON round-trip). The keys reuse the old localStorage key names so the
+  // one-time migration below is a straight copy. If IndexedDB is unavailable (very old browser,
+  // some locked-down private modes), the same API falls back to localStorage.
+  const DB_NAME = global.Brand.slug;
+  const DB_STORE = "kv";
+
+  function openDb() {
+    return new Promise((resolve, reject) => {
+      if (!global.indexedDB) return reject(new Error("IndexedDB unavailable"));
+      const req = global.indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+      req.onblocked = () => reject(new Error("IndexedDB open blocked"));
+    });
+  }
+
+  function idbRequest(db, mode, fn) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(DB_STORE, mode);
+      const req = fn(tx.objectStore(DB_STORE));
+      // Resolve on transaction complete (not request success) so a write is only reported done
+      // once it's actually committed to disk.
+      tx.oncomplete = () => resolve(req.result);
+      tx.onerror = () => reject(tx.error || req.error);
+      tx.onabort = () => reject(tx.error || new Error("IndexedDB transaction aborted"));
+    });
+  }
+
+  const localStorageKv = {
+    kind: "localStorage",
+    async get(key) {
+      const raw = localStorage.getItem(key);
+      return raw == null ? undefined : JSON.parse(raw);
+    },
+    async set(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    },
+    async del(key) {
+      localStorage.removeItem(key);
+    },
+  };
+
+  let kvPromise = null;
+  function getKv() {
+    if (!kvPromise) {
+      kvPromise = openDb().then(
+        (db) => ({
+          kind: "indexedDB",
+          get: (key) => idbRequest(db, "readonly", (s) => s.get(key)),
+          set: (key, value) => idbRequest(db, "readwrite", (s) => s.put(value, key)),
+          del: (key) => idbRequest(db, "readwrite", (s) => s.delete(key)),
+        }),
+        (err) => {
+          console.warn("Falling back to localStorage:", err);
+          return localStorageKv;
+        }
+      );
+    }
+    return kvPromise;
+  }
+
+  /** Move a value from old localStorage key(s) into the kv store, once. Only deletes the
+   * localStorage copy after the IndexedDB write has committed, so a failed migration never
+   * loses data. Returns the migrated value, or undefined if there was nothing to migrate. */
+  async function migrateFromLocalStorage(kv, key, legacyKeys = []) {
+    if (kv.kind !== "indexedDB") return undefined;
+    const localKeys = [key, ...legacyKeys];
+    for (const k of localKeys) {
+      let raw;
+      try {
+        raw = localStorage.getItem(k);
+      } catch {
+        return undefined; // localStorage blocked entirely — nothing to migrate
+      }
+      if (raw == null) continue;
+      const value = JSON.parse(raw);
+      await kv.set(key, value);
+      localKeys.forEach((lk) => localStorage.removeItem(lk));
+      return value;
+    }
+    return undefined;
+  }
+
+  // Saves are coalesced: persist() can fire several times in one interaction, and each write
+  // stores the whole state, so while one write is in flight only the newest pending state is
+  // kept and written next. Writes therefore land in order and the last one always wins.
+  let pendingSave = null;
+  let saveLoop = null;
+  const saveErrorHandlers = [];
+
+  function onSaveError(fn) {
+    saveErrorHandlers.push(fn);
+  }
+
+  function reportSaveError(err) {
+    console.error("Saving data failed:", err);
+    saveErrorHandlers.forEach((fn) => {
+      try {
+        fn(err);
+      } catch {}
+    });
+  }
+
+  function queueWrite(key, value) {
+    pendingSave = pendingSave || new Map();
+    pendingSave.set(key, value);
+    if (!saveLoop) {
+      saveLoop = (async () => {
+        const kv = await getKv();
+        while (pendingSave) {
+          const batch = pendingSave;
+          pendingSave = null;
+          for (const [k, v] of batch) {
+            try {
+              if (v === undefined) await kv.del(k);
+              else await kv.set(k, v);
+            } catch (err) {
+              reportSaveError(err);
+            }
+          }
+        }
+        saveLoop = null;
+      })();
+    }
+    return saveLoop;
+  }
+
+  /** Resolves once every queued write has been attempted. */
+  function flushSaves() {
+    return saveLoop || Promise.resolve();
+  }
+
+  /** Ask the browser not to evict our data under storage pressure. Best effort: Chrome grants
+   * it silently for installed/engaged sites, Firefox may prompt, Safari mostly ignores it. */
+  function requestPersistentStorage() {
+    try {
+      navigator.storage?.persist?.().catch(() => {});
+    } catch {}
+  }
+
+  /** {usage, quota} in bytes for this origin, or null if the browser can't say. */
+  async function storageEstimate() {
+    try {
+      const est = await navigator.storage?.estimate?.();
+      return est ? { usage: est.usage || 0, quota: est.quota || 0 } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // In-memory copy of the pre-demo snapshot so the UI can check for it synchronously; loaded
+  // alongside the main state in loadState().
+  let preDemoSnapshot = null;
 
   function defaultState() {
     return {
@@ -146,41 +306,30 @@
       (state.expenses && state.expenses.length) ||
       (state.books && state.books.length);
     if (!hasData) return false;
-    try {
-      localStorage.setItem(
-        PRE_DEMO_KEY,
-        JSON.stringify({
-          savedAt: new Date().toISOString(),
-          state: {
-            books: state.books,
-            royalties: state.royalties,
-            expenses: state.expenses,
-            connectedPlatforms: state.connectedPlatforms,
-            currency: state.currency,
-            showKenp: state.showKenp,
-            compactMode: state.compactMode,
-            isDemo: false,
-          },
-        })
-      );
-      return true;
-    } catch {
-      return false;
-    }
+    preDemoSnapshot = {
+      savedAt: new Date().toISOString(),
+      state: {
+        books: state.books,
+        royalties: state.royalties,
+        expenses: state.expenses,
+        connectedPlatforms: state.connectedPlatforms,
+        currency: state.currency,
+        showKenp: state.showKenp,
+        compactMode: state.compactMode,
+        isDemo: false,
+      },
+    };
+    queueWrite(PRE_DEMO_KEY, preDemoSnapshot);
+    return true;
   }
 
   function loadPreDemoSnapshot() {
-    try {
-      const raw = localStorage.getItem(PRE_DEMO_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
+    return preDemoSnapshot;
   }
 
   function clearPreDemoSnapshot() {
-    localStorage.removeItem(PRE_DEMO_KEY);
+    preDemoSnapshot = null;
+    queueWrite(PRE_DEMO_KEY, undefined);
   }
 
   /** Empty catalog/sales but keep prefs */
@@ -197,28 +346,44 @@
     };
   }
 
-  function loadState() {
+  /** Async: resolves to the saved state (or a fresh default). Also loads the pre-demo snapshot
+   * and, on first run after the IndexedDB switch, migrates both out of localStorage —
+   * including the pre-rebrand (WideLedger) key, so nobody's existing data disappears. */
+  async function loadState() {
+    requestPersistentStorage();
+    const kv = await getKv();
+
     try {
-      let raw = localStorage.getItem(STORAGE_KEY);
-      // One-time migration from the pre-rebrand (WideLedger) storage key, so nobody's
-      // existing local data disappears just because the product got renamed.
-      if (!raw) {
-        const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
-        if (legacy) {
-          localStorage.setItem(STORAGE_KEY, legacy);
-          localStorage.removeItem(LEGACY_STORAGE_KEY);
-          raw = legacy;
+      let snap = await kv.get(PRE_DEMO_KEY);
+      if (snap === undefined) snap = await migrateFromLocalStorage(kv, PRE_DEMO_KEY);
+      preDemoSnapshot = snap || null;
+    } catch (err) {
+      console.warn("Could not load pre-demo snapshot:", err);
+    }
+
+    let saved;
+    try {
+      saved = await kv.get(STORAGE_KEY);
+      if (saved === undefined) saved = await migrateFromLocalStorage(kv, STORAGE_KEY, [LEGACY_STORAGE_KEY]);
+      // localStorage fallback path: the pre-rebrand key is still worth picking up there too.
+      if (saved === undefined && kv.kind === "localStorage") {
+        saved = await kv.get(LEGACY_STORAGE_KEY);
+        if (saved !== undefined) {
+          await kv.set(STORAGE_KEY, saved);
+          await kv.del(LEGACY_STORAGE_KEY);
         }
       }
-      if (!raw) return defaultState();
-      return { ...defaultState(), ...JSON.parse(raw) };
-    } catch {
-      return defaultState();
+    } catch (err) {
+      console.error("Could not load saved data:", err);
     }
+    if (!saved) return defaultState();
+    return { ...defaultState(), ...saved };
   }
 
+  /** Queue a save of the full state. Returns a promise that resolves when it's written;
+   * callers don't need to await it (failures go to onSaveError handlers). */
   function saveState(state) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return queueWrite(STORAGE_KEY, state);
   }
 
   /** Deterministic-ish demo generator for a realistic wide author */
@@ -640,6 +805,9 @@
     isoDate,
     loadState,
     saveState,
+    flushSaves,
+    onSaveError,
+    storageEstimate,
     defaultState,
     generateDemoData,
     snapshotBeforeDemo,

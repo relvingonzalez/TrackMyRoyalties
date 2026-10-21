@@ -8,7 +8,9 @@
   const PIcons = window.WideLedgerPlatformIcons;
   const Brand = window.Brand;
 
-  let state = D.loadState();
+  // Real state is loaded asynchronously from IndexedDB at the top of boot(); nothing reads
+  // it before then.
+  let state = D.defaultState();
   let pendingImport = null;
   let pendingExpenseImport = null;
   let currentPage = "dashboard";
@@ -1832,6 +1834,20 @@
     $("#currency-select").value = state.currency || "USD";
     $("#show-kenp").checked = !!state.showKenp;
     $("#compact-mode").checked = !!state.compactMode;
+    renderStorageUsage();
+  }
+
+  async function renderStorageUsage() {
+    const el = $("#storage-usage");
+    if (!el) return;
+    await D.flushSaves(); // so the number reflects the change that was just made
+    const est = await D.storageEstimate();
+    if (!est || !est.quota) {
+      el.textContent = "";
+      return;
+    }
+    const mb = (b) => (b / 1048576 >= 1024 ? `${(b / 1073741824).toFixed(1)} GB` : `${(b / 1048576).toFixed(1)} MB`);
+    el.textContent = `Using ${mb(est.usage)} of ${mb(est.quota)} available to this app.`;
   }
 
   // ---------- Modals ----------
@@ -2297,9 +2313,21 @@
   // app, which has no server able to inject a real build stamp the way the desktop app does
   // (see desktop/app.py's compute_build_stamp) — if the sidebar already shows a real stamp,
   // this leaves it alone rather than overwriting it with a less precise hardcoded value.
-  const CLIENT_BUILD_FALLBACK = "2026-10-20 (free, no paywall)";
+  const CLIENT_BUILD_FALLBACK = "2026-10-20 (IndexedDB storage)";
 
   async function boot() {
+    state = await D.loadState();
+    D.onSaveError((err) => {
+      // Throttled: one failed interaction can trigger several persist() calls.
+      if (Date.now() - (boot._lastSaveErr || 0) < 10000) return;
+      boot._lastSaveErr = Date.now();
+      toast(
+        err?.name === "QuotaExceededError"
+          ? "Couldn't save: this device's browser storage is full. Export a vault backup now."
+          : "Couldn't save your latest change. Export a vault backup to be safe."
+      );
+    });
+
     renderLandingPlatforms();
     bindEvents();
     migrateDemoFlag();

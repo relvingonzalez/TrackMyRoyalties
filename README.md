@@ -67,7 +67,7 @@ Synthesized from r/selfpublish, r/KDP, Kindlepreneur tracker roundups, and compe
 | **Re-login / password hell**; scrapers break when Amazon changes UI | **CSV / report upload** + manual entry — **no platform passwords** |
 | **No public KDP API** (confirmed: SP-API does not expose KDP sales) | Architecture that survives dashboard changes |
 | **~15 min/day multi-store checks** (~100 hrs/year) | One dashboard; filter **all platforms or one** |
-| **Privacy anxiety** about cloud + credentials | **Local-first** (browser storage); backup/export anytime |
+| **Privacy anxiety** about cloud + credentials | **Local-first** (browser IndexedDB); backup/export anytime |
 | **Tax-season chaos** | Year summary + CSV/JSON export for accountants |
 | **Overwhelming UIs** or too-limited free tiers | Clean overview + insights; nothing held back |
 | **Double-counting** when using D2D + direct | Platform filter + import guides warn about overlap |
@@ -178,7 +178,7 @@ The importer also tolerates common alternate headers (`sale_date`, `earnings`, `
 
 ## Security & privacy
 
-- Data stored in **localStorage** on the device/browser only.  
+- Data stored in **IndexedDB** on the device/browser only (migrated automatically from the older localStorage format on first launch; falls back to localStorage if IndexedDB is unavailable).  
 - No third-party analytics in this MVP.  
 - Chart.js loaded from CDN (online first run); service worker caches app shell.  
 - Never paste KDP passwords into this app.

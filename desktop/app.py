@@ -195,7 +195,8 @@ def main():
     # app looked "reset" on every relaunch even though app.js was correctly
     # calling localStorage.setItem(). Pinning a real storage_path and turning
     # private_mode off gives the embedded browser a persistent profile on
-    # disk, the same way a normal browser tab would behave.
+    # disk, the same way a normal browser tab would behave. (The app now
+    # stores data in IndexedDB; the same persistent profile covers it.)
     STORAGE_DIR.mkdir(parents=True, exist_ok=True)
     webview.start(
         debug=os.environ.get(f"{APP_SLUG.upper()}_DEBUG") == "1",
