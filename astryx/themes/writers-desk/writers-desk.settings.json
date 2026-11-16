@@ -1,0 +1,99 @@
+{
+  "name": "writers-desk",
+  "like": "y2k",
+  "mode": "both",
+  "settings": [
+    {
+      "thing": "neutral",
+      "value": "#9a8770",
+      "source": "dial"
+    },
+    {
+      "thing": "font",
+      "value": "\"Literata\", Georgia, serif",
+      "source": "dial",
+      "on": "heading"
+    },
+    {
+      "thing": "--color-background-body",
+      "value": "#efe6d6",
+      "source": "token",
+      "mode": "light"
+    },
+    {
+      "thing": "background-color",
+      "value": "var(--color-accent)",
+      "source": "property",
+      "on": "button",
+      "when": "variant:primary"
+    },
+    {
+      "thing": "color",
+      "value": "var(--color-on-accent)",
+      "source": "property",
+      "on": "button",
+      "when": "variant:primary"
+    },
+    {
+      "thing": "background-color",
+      "value": "var(--color-background-surface)",
+      "source": "property",
+      "on": "button",
+      "when": "variant:secondary"
+    },
+    {
+      "thing": "color",
+      "value": "var(--color-accent)",
+      "source": "property",
+      "on": "button",
+      "when": "variant:secondary"
+    },
+    {
+      "thing": "border-color",
+      "value": "var(--color-accent)",
+      "source": "property",
+      "on": "button",
+      "when": "variant:secondary"
+    },
+    {
+      "thing": "background-color",
+      "value": "var(--color-accent-muted)",
+      "source": "property",
+      "on": "button",
+      "when": "variant:secondary",
+      "state": "hover"
+    },
+    {
+      "thing": "vibrancy",
+      "value": "30",
+      "source": "dial"
+    },
+    {
+      "thing": "--color-background-body",
+      "value": "#1a1814",
+      "source": "token",
+      "mode": "dark"
+    },
+    {
+      "thing": "font-family",
+      "value": "var(--font-family-heading)",
+      "source": "property",
+      "on": "side-nav-heading"
+    },
+    {
+      "thing": "accent",
+      "value": "#2b4c7e",
+      "source": "dial"
+    },
+    {
+      "thing": "color",
+      "value": "var(--color-text-primary)",
+      "source": "property",
+      "on": "button",
+      "when": "variant:secondary",
+      "state": "hover"
+    }
+  ],
+  "palette": "3fe692d893e6b1fba15285d1c733f6743de4ecdbaffae77a9da5a6214f074bf9",
+  "lifted": []
+}

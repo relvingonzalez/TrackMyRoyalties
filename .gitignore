@@ -6,3 +6,12 @@ __pycache__/
 tools/keys/
 *.license
 *.log
+
+# Astryx prototype build artifacts
+astryx/node_modules/
+astryx/dist/
+
+# Astryx theme editor previews (regenerated on every theme change)
+astryx/themes/*/preview*
+astryx/themes/*/sheet*
+astryx/themes/*/*.pictures.json

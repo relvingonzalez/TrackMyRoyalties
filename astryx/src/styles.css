@@ -1,0 +1,17 @@
+/* Order matters: reset → Astryx component styles → theme tokens (the theme's own CSS is
+   imported by the generated astryx-themes.js, after this file). */
+@import '@astryxdesign/core/reset.css';
+@import '@astryxdesign/core/astryx.css';
+/* Writer's Desk headings are semibold; its generated fonts.css loads only Literata's regular weight. */
+@import '@fontsource/literata/600.css';
+
+body {
+  font-family: var(--font-family-body);
+}
+
+/* A little wider than Astryx's 260px, so the app name fits without being cut off in the
+   wider-font themes (Writer's Desk, Y2K). Only while expanded: collapsed it's an icon rail.
+   App.jsx sets data-expanded. Unlayered, so it wins over Astryx's layered styles. */
+.astryx-side-nav[data-expanded='true'] {
+  width: 290px;
+}
