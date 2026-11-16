@@ -33,6 +33,7 @@ npm run build
 - [ ] Settings: theme, currency, compact layout; export a vault, then **Reset all data**, then restore the vault
 - [ ] Reload after making changes: everything is still there
 - [ ] Phone width: the menu opens, nothing scrolls sideways
+- [ ] Offline (built app only): visit once, reload, then in DevTools → Network choose **Offline** and reload. The app, your data, every page, and an Excel import still work
 
 ## Known limits
 

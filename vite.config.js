@@ -1,3 +1,5 @@
+import {createHash} from 'node:crypto';
+import {readFileSync, readdirSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {defineConfig} from 'vite';
 import react, {reactCompilerPreset} from '@vitejs/plugin-react';
@@ -17,9 +19,47 @@ compiler.rolldown.filter.id = {
   exclude: new RegExp(`^${escape(srcDir)}(core/classic|themes)/`),
 };
 
+/** Every file under `dir`, as paths relative to it (forward slashes). */
+function filesIn(dir) {
+  return readdirSync(dir, {recursive: true, withFileTypes: true})
+    .filter(entry => entry.isFile())
+    .map(entry => `${entry.parentPath}/${entry.name}`.slice(dir.length + 1).replaceAll('\\', '/'));
+}
+
+/**
+ * Writes dist/sw.js from src/service-worker.js: the list of files to save for offline use
+ * (everything the build emits, plus public/) and a version that's a hash of their contents,
+ * so the worker only changes, and visitors only re-download, when something shipped changed.
+ */
+function serviceWorker() {
+  return {
+    name: 'trackmyroyalties:service-worker',
+    apply: 'build',
+    enforce: 'post',
+    generateBundle(_options, bundle) {
+      const hash = createHash('sha256');
+      const urls = [];
+      for (const [fileName, output] of Object.entries(bundle)) {
+        // Source maps aren't needed offline; .woff duplicates .woff2, which browsers prefer.
+        if (fileName.endsWith('.map') || fileName.endsWith('.woff')) continue;
+        urls.push(fileName);
+        hash.update(fileName).update(output.type === 'chunk' ? output.code : output.source);
+      }
+      for (const fileName of filesIn('public')) {
+        urls.push(fileName);
+        hash.update(fileName).update(readFileSync(`public/${fileName}`));
+      }
+      const source = readFileSync('src/service-worker.js', 'utf8')
+        .replace("'__PRECACHE_URLS__'", JSON.stringify(urls.sort()))
+        .replace('__CACHE_VERSION__', hash.digest('hex').slice(0, 12));
+      this.emitFile({type: 'asset', fileName: 'sw.js', source});
+    },
+  };
+}
+
 export default defineConfig({
   // Relative asset paths, so the build works wherever it's served from: the site root on
   // Vercel, or the desktop launcher's local server.
   base: './',
-  plugins: [react(), babel({presets: [compiler]})],
+  plugins: [react(), babel({presets: [compiler]}), serviceWorker()],
 });

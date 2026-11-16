@@ -69,6 +69,7 @@ All free:
 - Tax year monthly breakdown; CSV / JSON exports
 - Vault backup and restore
 - Themes: Writer's Desk (default), Neutral, Y2K, Gothic; light and dark
+- Works offline, and installs to a phone's home screen
 
 ---
 
@@ -136,6 +137,7 @@ The importer also tolerates common alternate headers (`sale_date`, `earnings`, `
 ## Security & privacy
 
 - Data is stored in **IndexedDB** in your browser, on your device only.
+- Works offline after your first visit: the app saves its own files in the browser (a service worker), so the site and home-screen app open without internet.
 - No third-party analytics. Fonts load from Google Fonts (body text) and the app bundle (headings).
 - Never paste KDP passwords into this app; it never asks for them.
 

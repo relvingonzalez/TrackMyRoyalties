@@ -19,7 +19,14 @@ Data is stored per address (origin): `npm run dev`, `vite preview`, and the desk
 
 Vercel builds on push to `master` using `vercel.json` (`npm ci`, `npm run build`, serve `dist/`). The desktop launcher (`Launch TrackMyRoyalties.command`, `desktop/app.py`) serves the same `dist/` build.
 
-`public/sw.js` retires the service worker the original app installed for offline use: returning visitors get their old caches deleted and the worker unregistered. The current app doesn't use a service worker.
+## Offline support
+
+`src/service-worker.js` is a template; the `serviceWorker` plugin in `vite.config.js` writes `dist/sw.js` from it with the list of every built file (plus `public/`) and a version that's a hash of their contents. The app registers it in production builds, except in the desktop app (which already runs from disk).
+
+- Pages: network first (with a 4-second timeout), the saved page offline. The app's own files: saved copy first (their names change every build). Google Fonts: saved after the first online visit.
+- Each deploy changes `sw.js`, so visitors get the new worker on their next visit; it deletes the previous build's files. Open old tabs that need a file that's gone show "A newer version is available".
+- Registration uses `updateViaCache: 'none'` so update checks never come from the HTTP cache.
+- **Emergency undo:** if the worker ever misbehaves, deploy `scripts/sw-retire.js` as `public/sw.js` and remove the `serviceWorker` plugin. It deletes every cache and unregisters the worker for returning visitors. (Rolling back on Vercel to deployment `7a566c0` does the same.)
 
 ## Checks
 

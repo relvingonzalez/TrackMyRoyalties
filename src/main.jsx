@@ -21,6 +21,20 @@ function ThemedApp() {
   );
 }
 
+/**
+ * Offline support (production builds only; see src/service-worker.js). Not in the desktop
+ * app, which already runs from files on disk. A failure here (private browsing, blocked
+ * storage) only means no offline copy; it never affects the app.
+ */
+function registerServiceWorker() {
+  if (!import.meta.env.PROD || !('serviceWorker' in navigator) || location.hostname === '127.0.0.1') return;
+  // updateViaCache 'none': always check the network for a new sw.js, never the HTTP cache,
+  // so a new deploy is picked up on the next visit whatever cache headers the server sends.
+  navigator.serviceWorker
+    .register('./sw.js', {updateViaCache: 'none'})
+    .catch(error => console.warn('Offline support unavailable:', error));
+}
+
 const root = document.getElementById('root');
 
 // Load saved data before the first render, so no component ever sees a "not loaded yet"
@@ -32,6 +46,7 @@ try {
       <ThemedApp />
     </StrictMode>,
   );
+  registerServiceWorker();
 } catch (error) {
   console.error('Could not load saved data:', error);
   root.textContent = `Couldn't open your saved data (${error.message}). Try reloading the page.`;

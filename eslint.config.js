@@ -24,4 +24,5 @@ export default [
     },
   },
   {files: ['vite.config.js', 'eslint.config.js', 'scripts/**'], languageOptions: {globals: globals.node}},
+  {files: ['src/service-worker.js', 'scripts/sw-retire.js'], languageOptions: {globals: globals.serviceworker}},
 ];
