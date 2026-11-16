@@ -4,15 +4,13 @@ TrackMyRoyalties desktop shell (macOS / Windows / Linux via pywebview).
 
 - Serves the local web app (no internet required for app code)
 
-Run:
-  cd ~/TrackMyRoyalties
+Run (after `npm ci && npm run build`, which writes dist/):
   .venv/bin/python desktop/app.py
 """
 
 from __future__ import annotations
 
 import os
-import re
 import sys
 import time
 import threading
@@ -43,42 +41,26 @@ if _LEGACY_CONFIG_DIR.is_dir() and not CONFIG_DIR.exists():
     shutil.copytree(_LEGACY_CONFIG_DIR, CONFIG_DIR)
     print(f"Migrated {_LEGACY_CONFIG_DIR} -> {CONFIG_DIR}")
 
-# Tied to the actual files on disk (their newest mtime), not "when did this process start" —
-# a process can start fresh and still be pointed at a stale/wrong folder, and a launch-time
-# stamp would misleadingly say "now" either way. This one only changes when the files
-# genuinely change, which is exactly what's useful for confirming "am I on the build I think
-# I am" when troubleshooting a caching or wrong-folder problem.
+# The built app (`npm run build` writes it). Built asset file names change with every
+# build, so new code is always fetched fresh; index.html itself is covered by the no-store
+# header below and the per-launch ?boot= page URL in main().
+DIST = ROOT / "dist"
+
+
 def compute_build_stamp() -> str:
-    watched = [
-        ROOT / "index.html",
-        ROOT / "js" / "app.js",
-        ROOT / "js" / "import.js",
-        ROOT / "js" / "data.js",
-        ROOT / "js" / "platform-icons.js",
-        ROOT / "css" / "app.css",
-    ]
-    newest = 0.0
-    for f in watched:
-        try:
-            newest = max(newest, f.stat().st_mtime)
-        except OSError:
-            pass
+    """Newest modification time of the built files: confirms which build is running."""
+    newest = max((f.stat().st_mtime for f in DIST.rglob("*") if f.is_file()), default=0.0)
     if not newest:
         return "unknown"
     return datetime.fromtimestamp(newest, tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
 
-BUILD_STAMP = compute_build_stamp()
-# Cache-busting query param appended to this app's own local script/link URLs (never the
-# external CDN ones) — same value as the build stamp shown in the UI, so a fresh set of files
-# always gets fresh URLs the embedded browser has never cached before.
 CACHE_BUST = str(int(time.time()))
-LOCAL_ASSET_RE = re.compile(r'((?:href|src)=")((?:css|js)/[^"]+\.(?:css|js))(")')
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=str(ROOT), **kwargs)
+        super().__init__(*args, directory=str(DIST), **kwargs)
 
     def log_message(self, format, *args):  # noqa: A003
         pass
@@ -91,29 +73,6 @@ class QuietHandler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
         self.send_header("Pragma", "no-cache")
         super().end_headers()
-
-    def do_GET(self):
-        # Serve index.html with cache-busted local asset URLs instead of the raw file, so a
-        # browser that already cached the old js/app.js etc. from a PRIOR run (before this
-        # no-store fix even existed) can't accidentally keep using that stale copy — the
-        # ?v=... query string makes it a URL the browser has never seen, forcing a real fetch.
-        # Also stamps the visible build indicator in the sidebar footer.
-        path = self.path.split("?", 1)[0]
-        if path in ("/", "/index.html"):
-            try:
-                html = (ROOT / "index.html").read_text(encoding="utf-8")
-            except OSError:
-                return super().do_GET()
-            html = LOCAL_ASSET_RE.sub(rf"\g<1>\g<2>?v={CACHE_BUST}\g<3>", html)
-            html = html.replace('id="build-stamp" style="opacity:0.5">build: unknown<', f'id="build-stamp" style="opacity:0.5">build: {BUILD_STAMP}<')
-            body = html.encode("utf-8")
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-            return
-        super().do_GET()
 
 
 def start_server():
@@ -167,8 +126,14 @@ def main():
         print("  python3 -m venv .venv && .venv/bin/pip install pywebview cryptography")
         sys.exit(1)
 
+    if not (DIST / "index.html").is_file():
+        print("The app hasn't been built yet. From the project folder, run:")
+        print("  npm ci && npm run build")
+        sys.exit(1)
+
     os.chdir(ROOT)
     start_server()
+    print(f"Serving the build from {compute_build_stamp()}")
     # Include a cache-buster on the top-level page URL itself, not just the assets it
     # references — a fixed URL here means the embedded browser can decide its existing
     # cached copy of THIS page is "fresh enough" and never even make a request, in which

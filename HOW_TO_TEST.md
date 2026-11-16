@@ -1,59 +1,40 @@
-# How to test TrackMyRoyalties (desktop + browser)
+# How to test TrackMyRoyalties
 
-## What you have
+## Run it
 
-| Piece | Role |
-|--------|------|
-| Web UI in `~/TrackMyRoyalties` | The real product (local-first) |
-| `desktop/app.py` | Desktop window shell (pywebview) |
-| `Launch TrackMyRoyalties.command` | Double-click on Mac to open the app |
-
-This is **not** on the App Store yet. It is a **desktop app wrapper** around the local web app — good for real testing on your Mac.
-
----
-
-## Launch the desktop app
-
-**Option A — double-click**
-
-Finder → `TrackMyRoyalties` → **Launch TrackMyRoyalties.command**  
-(First time: macOS may ask to allow Terminal / local network.)
-
-**Option B — terminal**
+**Browser** (needs Node.js 22+):
 
 ```bash
-cd ~/TrackMyRoyalties
-.venv/bin/python desktop/app.py
+npm ci
+npm run build
+npx vite preview --port 8787
 ```
 
-You should get a native window titled **TrackMyRoyalties**.
+Open **http://localhost:8787**. Saved data belongs to that exact address, so keep using the same port to keep your test data.
 
----
+**Desktop (Mac):** double-click **Launch TrackMyRoyalties.command**. It builds the app when needed, then opens a native window (port 8788, with its own saved data). Nothing else may be using port 8788.
 
-## Browser testing (also fine)
+## Before you commit
 
 ```bash
-cd ~/TrackMyRoyalties
-python3 -m http.server 8787
-# open http://localhost:8787
+npm run lint             # ESLint, including React Compiler rules
+npm run check:compiler   # fails if React Compiler skips any component
+npm run build
 ```
 
-> Use `http://localhost`, not `file://`, so the service worker can register.
+## Checklist
 
----
+- [ ] First visit (private window): Welcome page → **Explore with demo data** and **Start empty** both work
+- [ ] Import: the CSVs in `sample-data/` one at a time and several at once; a KDP Orders (Lifetime) .xlsx combines its per-format sheets; "Replace my existing data" works
+- [ ] Expenses: add, edit, remove; import an expense CSV from **Import from file**
+- [ ] Titles: change a format, edit a title, merge two titles (the merge icon at the end of a row)
+- [ ] Dashboard: range and platform filters, an annotation; Platforms cards open that store's dashboard
+- [ ] Tax & export: CSV and JSON downloads
+- [ ] Settings: theme, currency, compact layout; export a vault, then **Reset all data**, then restore the vault
+- [ ] Reload after making changes: everything is still there
+- [ ] Phone width: the menu opens, nothing scrolls sideways
 
-## Vault (move to another browser/device)
+## Known limits
 
-1. **Import → Export vault (.json)**
-2. Copy file via AirDrop / USB / iCloud
-3. On the other device: **Import vault**
-
----
-
-## Quick test checklist
-
-- [ ] Load demo data → every page opens (Dashboard, Platforms, Titles, Expenses, Import, Tax & export, Settings)
-- [ ] Date range "All time" and "Custom" both work
-- [ ] Import a third and fourth platform → no limit
-- [ ] Tax & export: monthly table shows; CSV and JSON export download
-- [ ] Export vault → Reset data → Import vault → data returns
+- Keep **one tab** of the app open at a time: two tabs can overwrite each other's changes.
+- A change made in the instant before a reload or closing the window can be lost with very large ledgers (tens of thousands of rows), because saving happens in the background.

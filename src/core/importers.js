@@ -2,10 +2,11 @@
  * Report parsers: royalty CSV/Excel for every store, KDP multi-sheet workbooks, and
  * expense lists, plus the per-store export guides.
  *
- * This is the classic app's js/import.js, shared as-is (see core/ledger.js for why).
+ * The logic lives in classic/import.js, carried over unchanged from the original app (see
+ * core/ledger.js).
  */
 import './ledger.js'; // import.js expects data.js to have loaded
-import '../../../js/import.js';
+import './classic/import.js';
 
 const importers = window.WideLedgerImport;
 

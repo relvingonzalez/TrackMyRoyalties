@@ -8,9 +8,6 @@ import {brand} from '../core/ledger';
 import {downloadVault} from '../core/files';
 import {getLedgerSnapshot} from '../store/ledgerStore';
 
-/** The classic app, which reads the same data, as a way out when this one is broken. */
-const CLASSIC_APP_URL = '../../';
-
 /** A lazily loaded page whose file is gone, usually because a new version was deployed. */
 function isMissingCodeError(error) {
   return /dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(error?.message || '');
@@ -33,7 +30,6 @@ function CrashScreen({error}) {
           <>
             <Button label="Reload" variant="primary" onClick={() => window.location.reload()} />
             {!isMissingCode && getLedgerSnapshot() && <Button label="Download a vault backup" onClick={() => downloadVault(getLedgerSnapshot(), brand)} />}
-            <Button label="Open the classic app" variant="ghost" onClick={() => window.location.assign(CLASSIC_APP_URL)} />
           </>
         }
       />

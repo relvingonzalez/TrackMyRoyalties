@@ -7,11 +7,11 @@ tools/keys/
 *.license
 *.log
 
-# Astryx prototype build artifacts
-astryx/node_modules/
-astryx/dist/
+# Dependencies and build output (Vercel and the desktop launcher build dist/)
+node_modules/
+dist/
 
 # Astryx theme editor previews (regenerated on every theme change)
-astryx/themes/*/preview*
-astryx/themes/*/sheet*
-astryx/themes/*/*.pictures.json
+themes/*/preview*
+themes/*/sheet*
+themes/*/*.pictures.json

@@ -1,7 +1,7 @@
 /**
  * Charts: recharts styled with Astryx design tokens, following Astryx's official
- * `dashboard` template. Bucketing matches the classic app's js/charts.js so both UIs plot
- * the same points.
+ * `dashboard` template. Bucketing (by day, week, or month) matches the original app's
+ * charts, so long-time users see the same shapes.
  */
 import {
   Area,

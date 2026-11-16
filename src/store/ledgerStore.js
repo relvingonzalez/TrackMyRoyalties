@@ -98,7 +98,7 @@ export async function loadLedger() {
   const {ledger: repaired, setAsideCount} = repairLedger(await loadState());
   ledger = repaired;
   status = {...status, hasPreDemoSnapshot: !!loadPreDemoSnapshot(), setAsideCount};
-  if (setAsideCount > 0) saveState(ledger); // so the classic app, which shares this data, stops tripping on them too
+  if (setAsideCount > 0) saveState(ledger); // persist the repair, so it only happens once
   refreshStorageUsage();
 }
 

@@ -34,5 +34,5 @@ try {
   );
 } catch (error) {
   console.error('Could not load saved data:', error);
-  root.textContent = `Couldn't open your saved data (${error.message}). Try reloading, or open the classic app at ../../`;
+  root.textContent = `Couldn't open your saved data (${error.message}). Try reloading the page.`;
 }

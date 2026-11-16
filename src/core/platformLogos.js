@@ -1,15 +1,16 @@
 /**
- * Store logos, from the classic app's js/platform-icons.js. Its image paths are relative to
- * the repo root ("assets/platforms/kobo.png"), so they're mapped to the URLs Vite serves.
+ * Store logos, from classic/platform-icons.js (carried over from the original app). It
+ * returns paths like "assets/platforms/kobo.png", relative to src/, so they're mapped to
+ * the URLs Vite serves.
  */
-import '../../../js/platform-icons.js';
+import './classic/platform-icons.js';
 
 const platformIcons = window.WideLedgerPlatformIcons;
 
-const assetUrls = import.meta.glob('../../../assets/platforms/*', {eager: true, query: '?url', import: 'default'});
+const assetUrls = import.meta.glob('../assets/platforms/*', {eager: true, query: '?url', import: 'default'});
 
 function assetUrl(repoPath) {
-  return repoPath ? assetUrls[`../../../${repoPath}`] || null : null;
+  return repoPath ? assetUrls[`../${repoPath}`] || null : null;
 }
 
 /** Square mark: {type: 'img', src, tight} or {type: 'svg', markup, tight}. */

@@ -2,12 +2,13 @@
  * The ledger's data model: platforms, expense categories, aggregation, formatting,
  * IndexedDB persistence, and the demo catalog.
  *
- * This is the classic app's js/data.js, shared as-is so both UIs read and write the same
- * data the same way. That file is a plain script that attaches itself to `window`; this
- * module loads it once and re-exports its functions by name.
+ * The logic lives in classic/data.js, carried over unchanged from the original
+ * plain-JavaScript app, so existing users' saved data keeps loading exactly as before. It's
+ * a plain script that attaches itself to `window`; this module loads it once and
+ * re-exports its functions by name.
  */
-import '../../../js/brand.js'; // must load first: data.js derives its storage key from it
-import '../../../js/data.js';
+import './classic/brand.js'; // must load first: data.js derives its storage key from it
+import './classic/data.js';
 
 const data = window.WideLedgerData;
 
