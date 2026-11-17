@@ -1,6 +1,6 @@
 import {Text} from '@astryxdesign/core/Text';
 import {useApp} from '../../appContext';
-import {Page, PanelCard, PanelRow} from '../../components/layout';
+import {Page, PanelCard} from '../../components/layout';
 import {VaultControls} from '../../components/VaultControls';
 import {RoyaltyImporter} from './RoyaltyImporter';
 import {ExportGuides} from './ExportGuides';
@@ -12,10 +12,9 @@ export default function ImportPage() {
   const {focus} = useApp();
   return (
     <Page title="Import & transfer" subtitle="Upload store reports, or move everything between devices with a vault file. No account needed.">
-      <PanelRow>
-        <RoyaltyImporter />
-        <ExportGuides />
-      </PanelRow>
+      {/* Full width: the import preview's tables and field rows need the room. */}
+      <RoyaltyImporter />
+      <ExportGuides />
       <ImportedDataTable />
       <ExpenseImporter scrollIntoView={focus === 'expense-import'} />
       <ManualRoyaltyEntry />

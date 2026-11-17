@@ -6,6 +6,7 @@ import {themes} from './astryx-themes';
 import {loadLedger, useLedger} from './store/ledgerStore';
 import {DARK_ONLY_THEMES, activeThemeSlug} from './options';
 import {ErrorBoundary} from './components/ErrorBoundary';
+import {installAnchorPositioningFallback} from './anchorFallback';
 import App from './App';
 
 /** Applies the theme chosen in Settings. Light or dark follows the OS, except for dark-only themes. */
@@ -34,6 +35,8 @@ function registerServiceWorker() {
     .register('./sw.js', {updateViaCache: 'none'})
     .catch(error => console.warn('Offline support unavailable:', error));
 }
+
+installAnchorPositioningFallback();
 
 const root = document.getElementById('root');
 

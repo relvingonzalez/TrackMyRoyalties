@@ -69,7 +69,7 @@ function KdpWorkbookPanel({plan, mode, onModeChange}) {
     {
       key: 'format',
       header: 'Tagged as',
-      width: pixel(150),
+      width: proportional(2, {minWidth: 220}),
       renderCell: sheet => (sheet.included ? formatLabel(sheet.format) : <Text type="supporting">{sheet.note || 'Not imported'}</Text>),
     },
     {key: 'rowCount', header: 'Rows', width: pixel(80), align: 'end', renderCell: sheet => (sheet.included ? formatInt(sheet.rowCount) : '')},

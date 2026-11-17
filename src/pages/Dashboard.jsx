@@ -128,7 +128,7 @@ function KpiRow({ledger, totals, previous, money}) {
     <KpiGrid>
       <KpiCard label="Gross royalties" value={money(totals.income)} changePercent={percentChange(totals.income, previous.income)} note="Selected range" />
       <KpiCard
-        label="Expenses & ads"
+        label="Expenses/Ads"
         value={money(totals.spend)}
         changePercent={percentChange(totals.spend, previous.spend)}
         lowerIsBetter

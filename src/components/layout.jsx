@@ -78,7 +78,7 @@ export function PanelRow({children}) {
 
 export function KpiGrid({children}) {
   return (
-    <Grid columns={{minWidth: 150, repeat: 'fit'}} gap={4}>
+    <Grid columns={{minWidth: 130, repeat: 'fit'}} gap={4}>
       {children}
     </Grid>
   );
@@ -92,13 +92,16 @@ export function KpiCard({label, value, changePercent, lowerIsBetter, note}) {
   const hasChange = changePercent != null && Number.isFinite(changePercent);
   const isGood = lowerIsBetter ? changePercent < 0 : changePercent >= 0;
   return (
-    <Card>
+    <Card padding={3}>
       <VStack gap={2}>
-        <Text type="label" color="secondary">
+        {/* One line, so six tiles fit in a row; truncates with a tooltip if it ever can't. */}
+        <Text type="label" size="sm" color="secondary" maxLines={1}>
           {label}
         </Text>
-        <Text as="div" size="xl" weight="semibold" textWrap="nowrap">
-          {value}
+        <Text as="div" weight="semibold" textWrap="nowrap">
+          {/* Scales with the window so six tiles fit in a row and figures like $14,953.66 never
+              run past the card's edge. */}
+          <span style={{fontSize: 'clamp(1rem, 1.55vw, 1.5rem)'}}>{value}</span>
         </Text>
         {hasChange ? (
           <HStack gap={1} vAlign="center">

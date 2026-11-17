@@ -46,7 +46,7 @@ export default function Expenses() {
   }
 
   const columns = [
-    {key: 'date', header: 'Date', width: pixel(110)},
+    {key: 'date', header: 'Date', width: pixel(130)},
     {
       key: 'categoryId',
       header: 'Expense',

@@ -10,6 +10,9 @@ import {TextInput} from '@astryxdesign/core/TextInput';
 import {NumberInput} from '@astryxdesign/core/NumberInput';
 import {MetadataList, MetadataListItem} from '@astryxdesign/core/MetadataList';
 import {Table, pixel, proportional} from '@astryxdesign/core/Table';
+import {IconButton} from '@astryxdesign/core/IconButton';
+import {Icon} from '@astryxdesign/core/Icon';
+import {TrashIcon} from '@heroicons/react/24/outline';
 import {findImportBatchByHash, formatInt} from '../../core/ledger';
 import {importExpensesFile} from '../../core/importers';
 import {SPREADSHEET_ACCEPT, tryReadReportFile} from '../../core/files';
@@ -103,25 +106,25 @@ export function ExpenseImporter({scrollIntoView}) {
     {
       key: 'note',
       header: 'Item',
-      width: proportional(1, {minWidth: 180}),
+      width: proportional(1, {minWidth: 160}),
       renderCell: row => <TextInput label="Item" isLabelHidden size="sm" value={row.note} onChange={note => editRow(row.key, {note})} />,
     },
     {
       key: 'amount',
       header: 'Cost',
-      width: pixel(120),
+      width: pixel(110),
       renderCell: row => <NumberInput label="Cost" isLabelHidden size="sm" value={row.amount} onChange={amount => editRow(row.key, {amount})} />,
     },
     {
       key: 'date',
       header: 'Date',
-      width: pixel(110),
-      renderCell: row => row.date || <Text type="supporting">Uses year above</Text>,
+      width: pixel(130),
+      renderCell: row => row.date || <Text type="supporting">Year above</Text>,
     },
     {
       key: 'categoryId',
       header: 'Category',
-      width: pixel(200),
+      width: pixel(220),
       renderCell: row => (
         <Selector label="Category" isLabelHidden size="sm" options={CATEGORY_OPTIONS} value={row.categoryId} onChange={categoryId => editRow(row.key, {categoryId})} width="100%" />
       ),
@@ -137,9 +140,11 @@ export function ExpenseImporter({scrollIntoView}) {
     {
       key: 'remove',
       header: '',
-      width: pixel(110),
+      width: pixel(60),
       align: 'end',
-      renderCell: row => <Button label="Remove" size="sm" variant="ghost" onClick={() => removeRow(row.key)} />,
+      renderCell: row => (
+        <IconButton label={`Remove ${row.note || 'this row'}`} tooltip="Remove" icon={<Icon icon={TrashIcon} />} size="sm" variant="ghost" onClick={() => removeRow(row.key)} />
+      ),
     },
   ];
 
@@ -165,7 +170,7 @@ export function ExpenseImporter({scrollIntoView}) {
                 options={YEAR_OPTIONS}
                 value={fallbackYear}
                 onChange={setFallbackYear}
-                width={200}
+                width={280}
               />
             )}
             <Table data={rows} columns={columns} idKey="key" density="compact" />

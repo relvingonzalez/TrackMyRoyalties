@@ -84,3 +84,7 @@ Writer's Desk extends Y2K and was made with Astryx's (experimental) theme editor
 - Headings use Literata (`@fontsource/literata`, bundled, so it works offline); `src/styles.css` loads its 600 weight.
 
 `src/styles.css` also widens the expanded sidebar to 290px (Astryx has no width setting), so the app name fits in the wider-font themes.
+
+## Older browsers (popup positioning)
+
+Astryx places dropdowns, menus, date pickers, and tooltips with CSS anchor positioning (Chrome/Edge 125+, Safari 26+, Firefox 147+). In older browsers, notably Safari before 26 and so the Mac desktop app on older macOS, popups open in the window's top-left corner. `src/anchorFallback.js` fixes that: only when the browser lacks anchor positioning, it places each opening popup below (or above) the element that opened it, found through the ARIA links Astryx sets (`aria-controls`, `aria-describedby`). **After upgrading Astryx, re-check popups in an older Safari**: if Astryx changes those links, the fallback stops finding triggers (popups then behave as without the fallback, nothing worse).

@@ -47,7 +47,7 @@ export const DARK_ONLY_THEMES = new Set(['gothic']);
 /** Value used in platform Selectors for "not tied to one platform" (Selector values are strings). */
 export const GENERAL_PLATFORM = 'general';
 
-export const GENERAL_PLATFORM_OPTIONS = [{value: GENERAL_PLATFORM, label: 'General (not tied to one platform)'}, ...PLATFORM_OPTIONS];
+export const GENERAL_PLATFORM_OPTIONS = [{value: GENERAL_PLATFORM, label: 'General', description: 'Not tied to one platform'}, ...PLATFORM_OPTIONS];
 
 /**
  * Today (or a given Date) as YYYY-MM-DD in the user's local time zone. (toISOString alone

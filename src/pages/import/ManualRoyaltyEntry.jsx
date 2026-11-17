@@ -36,16 +36,17 @@ export function ManualRoyaltyEntry() {
 
   return (
     <PanelCard title="Add a royalty by hand" hint="When a store only shows a monthly total">
-      <Grid columns={{minWidth: 180, repeat: 'fit'}} gap={3}>
-        <DateInput label="Date" value={entry.date} onChange={value => setField('date', value || '')} isRequired />
+      {/* One row of six on desktop (two per row on phones). Short labels and no
+          required/optional markers, so every label fits on one line and the fields align. */}
+      <Grid columns={{minWidth: 125, repeat: 'fit'}} gap={3}>
+        <DateInput label="Date" value={entry.date} onChange={value => setField('date', value || '')} format="system_date" />
         <Selector label="Platform" options={PLATFORM_OPTIONS} value={entry.platformId} onChange={value => setField('platformId', value)} width="100%" />
-        <TextInput label="Title" value={entry.title} onChange={value => setField('title', value)} placeholder="Book title" isOptional />
+        <TextInput label="Title" value={entry.title} onChange={value => setField('title', value)} placeholder="Optional" />
         <NumberInput
-          label="Royalties (USD)"
+          label="Royalty (USD)"
           value={entry.royalty}
           onChange={value => setField('royalty', value)}
           status={isRoyaltyMissing ? {type: 'error', message: 'Enter the royalty amount.'} : undefined}
-          isRequired
         />
         <NumberInput label="Units" value={entry.units} onChange={value => setField('units', value)} />
         <NumberInput label="KENP pages" value={entry.kenp} onChange={value => setField('kenp', value)} />
